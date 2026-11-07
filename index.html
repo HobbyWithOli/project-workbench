@@ -139,6 +139,8 @@ textarea.wrap{display:block;resize:none;overflow:hidden;field-sizing:content;min
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb-rm{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.9rem;line-height:1;padding:0;display:grid;place-items:center}
 .thumb-rm:hover{color:var(--warn);border-color:var(--warn)}
+.top-actions{display:flex;align-items:center;gap:10px}
+.edit-note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:.88rem;font-weight:700;margin:-4px 0 12px}
 .step .confirm{grid-column:2/5}
 .lb{position:fixed;inset:0;background:rgba(10,12,18,.88);display:grid;place-items:center;padding:16px;z-index:50}
 .lb[hidden]{display:none!important}
@@ -329,7 +331,8 @@ function detail(p){
   const sw=COLORS.map(c=>`<button class="sw ${p.color===c?"on":""}" style="--pc:var(--p-${c})" data-act="color" data-c="${c}" aria-label="${c} colour"></button>`).join("");
   const mode=viewMode(p);
   const stages=sortStages(st).map(s=>stageHTML(p,s)).join("") || `<div class="empty" style="padding:4px 0">No ${LB(p).many} yet. Add the first one below, for example “${LB(p).eg}” with a deadline.</div>`;
-  return `<div class="top" style="margin-bottom:12px"><button class="btn ghost back" data-act="back">← All projects</button><div class="save" id="save" aria-live="polite"></div></div>
+  return `<div class="top" style="margin-bottom:12px"><button class="btn ghost back" data-act="back">← All projects</button><div class="top-actions"><div class="save" id="save" aria-live="polite"></div><button class="btn ${ui.edit?"primary":""}" data-act="edit" aria-pressed="${ui.edit?"true":"false"}">${ui.edit?"Done":"Edit"}</button></div></div>
+  ${ui.edit?`<div class="edit-note">Edit mode: tap × to delete a ${LB(p).one}, step or photo. Tap Done when you're finished.</div>`:""}
   <div class="p-head" style="${pc(p)}">
     <textarea class="p-name wrap" rows="1" id="p-name" data-f="name" enterkeyhint="done" aria-label="Project name" placeholder="Project name">${esc(p.name)}</textarea>
     <textarea class="p-about" id="p-about" data-f="about" rows="2" placeholder="What is this project? Add a goal or notes" aria-label="Project notes">${esc(p.about)}</textarea>
@@ -349,9 +352,9 @@ function detail(p){
       <button class="btn primary" type="submit">Add ${LB(p).one}</button></form>
     </div>
   </section>
-  <div class="danger-zone">${ui.confirm==="project"
+  ${ui.edit?`<div class="danger-zone">${ui.confirm==="project"
     ?`<div class="confirm">Delete “${esc(p.name)}” and all its stages? <button class="btn danger" data-act="del-project-yes">Delete project</button><button class="btn" data-act="cancel">Keep it</button></div>`
-    :`<button class="btn danger" data-act="del-project">Delete project</button>`}</div>`;
+    :`<button class="btn danger" data-act="del-project">Delete project</button>`}</div>`:""}`;
 }
 /* ---------- paints list ---------- */
 // Reads paint names and tone numbers out of step text, e.g. "Lustria Green 3, shade 1-2, highlight 4-5".
@@ -522,14 +525,14 @@ function stageHTML(p,s){
       <input type="checkbox" class="check" id="ck-${t.id}" data-act="toggle-step" data-s="${s.id}" data-t="${t.id}" ${t.done?"checked":""} aria-label="Step done">
       <textarea class="step-text wrap" rows="1" id="tx-${t.id}" data-f="step" data-s="${s.id}" data-t="${t.id}" enterkeyhint="done" aria-label="Step">${esc(t.text)}</textarea>
       <button class="cam" data-act="add-photo" data-s="${s.id}" data-t="${t.id}" aria-label="Add reference photo" title="Add reference photo" ${photoBusy?"disabled":""}>${CAM}</button>
-      <button class="x" data-act="del-step" data-s="${s.id}" data-t="${t.id}" aria-label="Remove step">×</button>${photosHTML(s,t,true)}</div>`).join("");
+      ${ui.edit?`<button class="x" data-act="del-step" data-s="${s.id}" data-t="${t.id}" aria-label="Remove step">×</button>`:"<span></span>"}${photosHTML(s,t,ui.edit)}</div>`).join("");
   const n=(s.steps||[]).length, d=(s.steps||[]).filter(t=>t.done).length;
   return `<div class="stage ${stageDone(s)?"is-done":""} ${s.collapsed?"is-folded":""}">
     <div class="st-top">
       <button class="fold" data-act="fold" data-s="${s.id}" aria-expanded="${s.collapsed?"false":"true"}" aria-label="${s.collapsed?"Expand":"Collapse"} ${LB(p).one}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <input type="checkbox" class="check" id="sd-${s.id}" data-act="toggle-stage" data-s="${s.id}" ${s.done?"checked":""} aria-label="${LB(p).One} complete">
       <textarea class="st-title wrap" rows="1" id="st-${s.id}" data-f="stage-title" data-s="${s.id}" enterkeyhint="done" placeholder="${LB(p).One} name" aria-label="${LB(p).One} name">${esc(s.title)}</textarea>
-      <button class="x" data-act="del-stage" data-s="${s.id}" aria-label="Delete ${LB(p).one}">×</button>
+      ${ui.edit?`<button class="x" data-act="del-stage" data-s="${s.id}" aria-label="Delete ${LB(p).one}">×</button>`:"<span></span>"}
       <div class="st-meta">${armsHTML(s)}${dueChip(s)}<input type="date" class="date" id="du-${s.id}" data-f="stage-due" data-s="${s.id}" value="${esc(s.due||"")}" aria-label="Deadline">
         ${n?`<span class="chip">${d}/${n} steps</span>`:""}${s.example?'<span class="chip ex">Example</span>':""}</div>
     </div>
@@ -543,7 +546,7 @@ function stageHTML(p,s){
 /* ---------- actions ---------- */
 function cur(){return projects[ui.view];}
 function stage(p,sid){return (p.stages||[]).find(s=>s.id===sid);}
-function setView(v){ui.view=v;ui.confirm=null;try{localStorage.setItem("pw-view",v);}catch(e){} render(); window.scrollTo(0,0);}
+function setView(v){ui.view=v;ui.confirm=null;ui.edit=false;try{localStorage.setItem("pw-view",v);}catch(e){} render(); window.scrollTo(0,0);}
 function touch(s){if(s) s.example=false;}
 
 /* ---------- reference photos (kept on this phone, in IndexedDB) ---------- */
@@ -627,6 +630,7 @@ app.addEventListener("click",e=>{
     return;
   }
   if(a==="cancel"){ui.confirm=null;return render();}
+  if(a==="edit"&&p){ui.edit=!ui.edit;ui.confirm=null;return render();}
   if(a==="export") return exportBackup();
   if(a==="view-photo") return openLB(b.dataset.ref);
   if(!p) return;
