@@ -140,6 +140,8 @@ textarea.wrap{display:block;resize:none;overflow:hidden;field-sizing:content;min
 .thumb-rm{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.9rem;line-height:1;padding:0;display:grid;place-items:center}
 .thumb-rm:hover{color:var(--warn);border-color:var(--warn)}
 .top-actions{display:flex;align-items:center;gap:10px}
+.st-title[readonly]{cursor:default;outline:none;-webkit-user-select:none;user-select:none}
+.st-title:not([readonly]){background:var(--sunk);border-radius:6px;padding:2px 6px}
 .edit-note{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:.88rem;font-weight:700;margin:-4px 0 12px}
 .step .confirm{grid-column:2/5}
 .lb{position:fixed;inset:0;background:rgba(10,12,18,.88);display:grid;place-items:center;padding:16px;z-index:50}
@@ -332,7 +334,7 @@ function detail(p){
   const mode=viewMode(p);
   const stages=sortStages(st).map(s=>stageHTML(p,s)).join("") || `<div class="empty" style="padding:4px 0">No ${LB(p).many} yet. Add the first one below, for example “${LB(p).eg}” with a deadline.</div>`;
   return `<div class="top" style="margin-bottom:12px"><button class="btn ghost back" data-act="back">← All projects</button><div class="top-actions"><div class="save" id="save" aria-live="polite"></div><button class="btn ${ui.edit?"primary":""}" data-act="edit" aria-pressed="${ui.edit?"true":"false"}">${ui.edit?"Done":"Edit"}</button></div></div>
-  ${ui.edit?`<div class="edit-note">Edit mode: tap × to delete a ${LB(p).one}, step or photo. Tap Done when you're finished.</div>`:""}
+  ${ui.edit?`<div class="edit-note">Edit mode: tap a ${LB(p).one}'s name to rename it, or × to delete a ${LB(p).one}, step or photo. Tap Done when you're finished.</div>`:""}
   <div class="p-head" style="${pc(p)}">
     <textarea class="p-name wrap" rows="1" id="p-name" data-f="name" enterkeyhint="done" aria-label="Project name" placeholder="Project name">${esc(p.name)}</textarea>
     <textarea class="p-about" id="p-about" data-f="about" rows="2" placeholder="What is this project? Add a goal or notes" aria-label="Project notes">${esc(p.about)}</textarea>
@@ -531,7 +533,7 @@ function stageHTML(p,s){
     <div class="st-top">
       <button class="fold" data-act="fold" data-s="${s.id}" aria-expanded="${s.collapsed?"false":"true"}" aria-label="${s.collapsed?"Expand":"Collapse"} ${LB(p).one}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <input type="checkbox" class="check" id="sd-${s.id}" data-act="toggle-stage" data-s="${s.id}" ${s.done?"checked":""} aria-label="${LB(p).One} complete">
-      <textarea class="st-title wrap" rows="1" id="st-${s.id}" data-f="stage-title" data-s="${s.id}" enterkeyhint="done" placeholder="${LB(p).One} name" aria-label="${LB(p).One} name">${esc(s.title)}</textarea>
+      <textarea class="st-title wrap" rows="1" id="st-${s.id}" ${ui.edit?"":'readonly tabindex="-1"'} data-f="stage-title" data-s="${s.id}" enterkeyhint="done" placeholder="${LB(p).One} name" aria-label="${LB(p).One} name">${esc(s.title)}</textarea>
       ${ui.edit?`<button class="x" data-act="del-stage" data-s="${s.id}" aria-label="Delete ${LB(p).one}">×</button>`:"<span></span>"}
       <div class="st-meta">${armsHTML(s)}${dueChip(s)}<input type="date" class="date" id="du-${s.id}" data-f="stage-due" data-s="${s.id}" value="${esc(s.due||"")}" aria-label="Deadline">
         ${n?`<span class="chip">${d}/${n} steps</span>`:""}${s.example?'<span class="chip ex">Example</span>':""}</div>
