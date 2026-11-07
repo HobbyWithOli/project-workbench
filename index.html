@@ -914,6 +914,7 @@ app.addEventListener("change",e=>{
       if(!ps||typeof ps!=="object") throw 0;
       projects={}; Object.entries(ps).forEach(([id,p])=>{projects[id]=Object.assign(p,{id,stages:p.stages||[]});});
       persist(); ui.importMsg="Restored "+Object.keys(projects).length+" projects from "+f.name+".";
+      try{localStorage.removeItem("workbench-mig-maa-2026-11-07");}catch(e){} migrateMenAtArms1107();
       if(d.photos&&typeof d.photos==="object") Object.entries(d.photos).forEach(([id,u])=>{if(typeof u==="string"&&u.startsWith("data:image/")) fetch(u).then(r=>r.blob()).then(b=>putPhoto(id,b)).then(()=>{delete photoLoading[id];render();}).catch(()=>{});});
     }catch(err){ui.importMsg="That file isn't a Project Workbench backup. Choose a file saved with “Save backup file”.";}
     render();
