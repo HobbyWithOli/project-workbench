@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en-GB"><head>
+<meta charset="utf-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=6967a9c9-9125-4ac9-a872-8ed051554938
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=6967a9c9-9125-4ac9-a872-8ed051554938
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Project Workbench</title>
+<meta name="theme-color" content="#EEF0F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11131A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: single column workbench; overview (coming up + project cards) and a project detail view with stage blocks */
+:root{
+  --bg:#EEF0F4; --surface:#FFFFFF; --sunk:#E3E6EE; --ink:#191D2B; --muted:#5A6276; --line:#D6DAE4;
+  --accent:#2A3DA6; --accent-ink:#FFFFFF; --gold:#9A6C12; --gold-bg:#F6EBD3; --warn:#B03E25; --warn-bg:#F8E1DA; --ok:#2B7553; --ok-bg:#DCEFE5;
+  --p-blue:#2A3DA6; --p-red:#B8323A; --p-gold:#B07F16; --p-green:#2F7D5B; --p-plum:#7B3F86; --p-teal:#1C7A84;
+  --f-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131A; --surface:#1A1D27; --sunk:#232735; --ink:#E7E9F1; --muted:#9AA1B5; --line:#2C3142;
+  --accent:#8E9CFF; --accent-ink:#11131A; --gold:#E2B656; --gold-bg:#3A301A; --warn:#F28C70; --warn-bg:#3D211B; --ok:#6CC89C; --ok-bg:#1B3529;
+  --p-blue:#8E9CFF; --p-red:#F07A80; --p-gold:#E2B656; --p-green:#6CC89C; --p-plum:#CC8ED8; --p-teal:#5CC6D0;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#11131A; --surface:#1A1D27; --sunk:#232735; --ink:#E7E9F1; --muted:#9AA1B5; --line:#2C3142;
+  --accent:#8E9CFF; --accent-ink:#11131A; --gold:#E2B656; --gold-bg:#3A301A; --warn:#F28C70; --warn-bg:#3D211B; --ok:#6CC89C; --ok-bg:#1B3529;
+  --p-blue:#8E9CFF; --p-red:#F07A80; --p-gold:#E2B656; --p-green:#6CC89C; --p-plum:#CC8ED8; --p-teal:#5CC6D0;
+  color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:20px 64px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* header */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.top h1{font-size:clamp(1.9rem,6vw,2.6rem);font-weight:800;line-height:1}
+.today{color:var(--muted);font-size:.85rem;margin-top:6px}
+.save{font-size:.78rem;color:var(--muted);min-height:1.2em}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:.9rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--warn);border-color:var(--warn)}
+.btn.ghost{background:transparent;border-color:transparent;padding-inline:6px;color:var(--muted)}
+
+section{margin-top:28px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.sec-head h2{font-size:1.15rem;font-weight:800}
+
+/* coming up */
+.agenda{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ag-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left}
+.ag-row:first-child{border-top:0}
+.ag-row:hover{background:var(--sunk)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--pc)}
+.ag-title{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.ag-proj{font-size:.82rem;color:var(--muted)}
+.empty{padding:18px;color:var(--muted)}
+
+/* chips */
+.chip{font-family:var(--f-mono);font-size:.74rem;padding:3px 8px;border-radius:999px;white-space:nowrap;background:var(--sunk);color:var(--muted)}
+.chip.soon{background:var(--gold-bg);color:var(--gold)}
+.chip.over{background:var(--warn-bg);color:var(--warn)}
+.chip.done{background:var(--ok-bg);color:var(--ok)}
+.chip.ex{font-family:var(--f-body);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:.64rem}
+
+/* project cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card:hover{border-color:var(--pc)}
+.card h3{font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:8px;min-width:0}
+.card h3 span{overflow-wrap:anywhere}
+.card .meta{font-size:.85rem;color:var(--muted)}
+.card.add{align-items:center;justify-content:center;border-style:dashed;color:var(--muted);font-weight:700;min-height:120px;background:transparent}
+.track{display:flex;gap:3px;height:8px}
+.track i{flex:1;border-radius:2px;background:var(--sunk)}
+.track i.on{background:var(--pc)}
+.next{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.88rem;min-width:0}
+.next{flex-wrap:wrap}
+.next span:first-child{min-width:0;overflow-wrap:anywhere}
+
+/* detail */
+.back{margin-bottom:14px}
+.p-head{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:12px}
+.p-name{font-family:var(--f-display);font-weight:800;font-size:clamp(1.5rem,5vw,2rem);border:0;background:transparent;width:100%;padding:0;line-height:1.15}
+textarea.wrap{display:block;resize:none;overflow:hidden;field-sizing:content;min-height:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.p-about{border:1px solid transparent;background:var(--sunk);border-radius:8px;width:100%;padding:8px 10px;resize:vertical;min-height:2.6em;color:var(--ink)}
+.p-about:focus{border-color:var(--line)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid transparent;background:var(--pc);padding:0}
+.sw.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--pc)}
+.p-stats{display:flex;gap:18px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
+.p-stats b{color:var(--ink);font-family:var(--f-mono)}
+
+.stages{display:grid;gap:12px}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px;min-width:0}
+.stage.is-done{opacity:.72}
+.st-top{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:10px;align-items:start}
+.fold{border:0;background:transparent;color:var(--muted);width:26px;height:26px;margin-top:1px;border-radius:6px;display:grid;place-content:center;padding:0}
+.fold:hover{background:var(--sunk);color:var(--ink)}
+.fold svg{transition:transform .15s}
+.is-folded .fold svg{transform:rotate(-90deg)}
+.is-folded .steps{display:none}
+.sec-tools{display:flex;gap:6px;align-items:center}
+.check{appearance:none;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;margin:3px 0 0;display:grid;place-content:center;background:var(--surface);cursor:pointer;flex:none}
+.check:checked{background:var(--pc,var(--accent));border-color:var(--pc,var(--accent))}
+.check:checked::after{content:"";width:10px;height:6px;border:solid var(--surface);border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translate(1px,-1px)}
+.st-title{font-family:var(--f-display);font-weight:800;font-size:1.1rem;line-height:1.3;border:0;background:transparent;width:100%;padding:0}
+.is-done .st-title{text-decoration:line-through}
+.st-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;grid-column:3/5}
+.date{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:4px 8px;font-family:var(--f-mono);font-size:.82rem}
+.steps{display:grid;gap:2px;padding-left:32px}
+.step{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:4px 8px;align-items:start}
+.cam{align-self:start;display:inline-grid;place-items:center;border:0;background:transparent;color:var(--muted);padding:5px 6px;border-radius:6px}
+.cam:hover{color:var(--accent);background:var(--sunk)}
+.cam svg{width:18px;height:18px;display:block}
+.cam[disabled]{opacity:.5}
+.thumbs{grid-column:2/5;display:flex;gap:8px;flex-wrap:wrap;padding:2px 0 8px}
+.thumb{position:relative;width:76px;height:76px;flex:none}
+.thumb-open{display:block;width:100%;height:100%;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--sunk)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-rm{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.9rem;line-height:1;padding:0;display:grid;place-items:center}
+.thumb-rm:hover{color:var(--warn);border-color:var(--warn)}
+.step .confirm{grid-column:2/5}
+.lb{position:fixed;inset:0;background:rgba(10,12,18,.88);display:grid;place-items:center;padding:16px;z-index:50}
+.lb[hidden]{display:none!important}
+.lb img{max-width:100%;max-height:calc(100vh - 96px);border-radius:8px;display:block}
+.lb-close{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;background:var(--surface);color:var(--ink);border:0;border-radius:999px;padding:8px 14px;font-weight:700}
+.step .check{width:18px;height:18px;margin:6px 0 0;border-radius:5px}
+.step .check:checked::after{width:8px;height:5px}
+.step-text{border:0;background:transparent;width:100%;padding:4px 0;min-width:0;line-height:1.45}
+.step.done .step-text{text-decoration:line-through;color:var(--muted)}
+.x{align-self:start;border:0;background:transparent;color:var(--muted);font-size:1.1rem;line-height:1;padding:4px 6px;border-radius:6px}
+.x:hover{color:var(--warn);background:var(--warn-bg)}
+.add-step{border:0;border-bottom:1px dashed var(--line);background:transparent;padding:6px 0;width:100%;color:var(--ink)}
+.add-step::placeholder,.new-row input::placeholder{color:var(--muted)}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 10px;font-weight:700;font-size:.9rem}
+.new-stage{border:1px dashed var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px}
+.new-row{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+.step-form{margin:0}
+.new-row input[type=text]{flex:1 1 200px;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px}
+.muted{color:var(--muted);font-size:.9rem;margin:0 0 10px;max-width:60ch}
+.backup{margin-top:40px}
+.danger-zone{margin-top:32px;display:flex;justify-content:flex-end}
+.note{background:var(--gold-bg);color:var(--gold);border-radius:8px;padding:10px 12px;font-size:.88rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--surface)}
+.seg button{border:0;background:transparent;border-radius:999px;padding:6px 12px;font-weight:700;font-size:.85rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--pc,var(--accent));color:var(--surface)}
+.sec-head{flex-wrap:wrap}
+.groups{display:grid;gap:10px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0;overflow:hidden}
+.g-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:12px 14px;border:0;background:transparent;text-align:left}
+.g-head h3{font-size:1.05rem;font-weight:800}
+.g-head .fold svg{transition:transform .15s}
+.group:not(.open) .g-head .fold svg{transform:rotate(-90deg)}
+.g-bar{grid-column:2/4;height:5px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.g-bar i{display:block;height:100%;background:var(--pc,var(--accent))}
+.g-body{padding:0 14px 12px;display:grid;gap:12px}
+.g-stage{display:grid;gap:2px}
+.g-stage-name{font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.02em;overflow-wrap:anywhere}
+.g-hint{font-size:.85rem;color:var(--muted);margin:0 0 10px;max-width:60ch}
+.group.all-done h3{color:var(--muted)}
+.paints{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-top:12px;overflow:hidden}
+.pt-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:12px 16px;border:0;background:transparent;text-align:left}
+.pt-head h2{font-size:1.1rem;font-weight:800}
+.paints:not(.open) .pt-head .fold svg{transform:rotate(-90deg)}
+.pt-body{padding:0 16px 14px;display:grid;gap:10px}
+.pt-note{font-size:.85rem;color:var(--muted);margin:0;max-width:60ch}
+.pt-list{display:grid;gap:8px}
+.pt-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.pt-row:last-child{border-bottom:0;padding-bottom:0}
+.pt-name{font-weight:700;overflow-wrap:anywhere}
+.pt-tones{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.pot{min-width:34px;height:34px;border-radius:999px;border:1.5px solid var(--line);background:var(--sunk);font-family:var(--f-mono);font-size:.85rem;padding:0 10px;color:var(--ink)}
+.pot[aria-pressed="true"]{background:var(--pc,var(--accent));border-color:var(--pc,var(--accent));color:var(--surface)}
+.pt-sub{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:4px}
+.pt-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.g-paints{font-size:.85rem;color:var(--muted);background:var(--sunk);border-radius:8px;padding:8px 10px;overflow-wrap:anywhere}
+.g-paints b{color:var(--ink)}
+.st-paints{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 10px;background:var(--sunk);border-radius:8px}
+.st-paints .label{width:100%}
+.sp{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0}
+.sp-name{font-size:.85rem;font-weight:700;overflow-wrap:anywhere}
+.pot.sm{min-width:28px;height:28px;font-size:.78rem;padding:0 7px;background:var(--surface)}
+.pot.sm[aria-pressed="true"]{background:var(--pc,var(--accent))}
+.sp-sup{font-size:.82rem;color:var(--muted)}
+.st-arms{width:46px;height:54px;flex:none;display:block}
+.st-arms svg{width:100%;height:100%;display:block;overflow:visible}
+@media (max-width:520px){
+  .steps{padding-left:4px}
+  .stage{padding:12px}
+  .st-top{gap:8px}
+  .st-meta{grid-column:1/5}
+}
+@media (prefers-reduced-motion:no-preference){.card,.ag-row,.btn{transition:border-color .15s,background .15s}}
+</style>
+
+</head><body>
+<div class="wrap" id="app">
+  <div class="top"><div><h1>Project Workbench</h1><div class="today">Loading your projects…</div></div></div>
+  <section><div class="agenda"><div class="empty">Your upcoming deadlines and projects will appear here. Once loaded, tap “New project” to add one.</div></div></section>
+</div>
+
+<input type="file" id="photo-input" accept="image/*" hidden>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Reference photo"><button class="lb-close" id="lb-close">Close</button><img id="lb-img" alt="Reference photo"></div>
+<script>
+(function(){
+const COLORS=["blue","red","gold","green","plum","teal"];
+const app=document.getElementById("app");
+let ready=false;
+let projects={};                 // id -> project
+const timers={};
+let lastSaved=0, saveError="";
+let ui={view:"home", confirm:null, importMsg:"", modes:{}, openGroups:{}};
+try{const v=localStorage.getItem("pw-view"); if(v) ui.view=v;}catch(e){}
+try{ui.modes=JSON.parse(localStorage.getItem("pw-modes")||"{}")||{};}catch(e){}
+try{ui.openGroups=JSON.parse(localStorage.getItem("pw-groups")||"{}")||{};}catch(e){}
+ui.pots={}; ui.paintsOpen={};
+try{ui.pots=JSON.parse(localStorage.getItem("pw-pots")||"{}")||{};}catch(e){}
+try{ui.paintsOpen=JSON.parse(localStorage.getItem("pw-paints-open")||"{}")||{};}catch(e){}
+function saveUI(){try{localStorage.setItem("pw-modes",JSON.stringify(ui.modes));localStorage.setItem("pw-groups",JSON.stringify(ui.openGroups));
+  localStorage.setItem("pw-pots",JSON.stringify(ui.pots));localStorage.setItem("pw-paints-open",JSON.stringify(ui.paintsOpen));}catch(e){}}
+
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const clone=o=>JSON.parse(JSON.stringify(o));
+function todayISO(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function daysUntil(iso){if(!iso)return null;const [y,m,d]=iso.split("-").map(Number);const t=new Date();const a=Date.UTC(t.getFullYear(),t.getMonth(),t.getDate());return Math.round((Date.UTC(y,m-1,d)-a)/864e5);}
+function fmtDate(iso){if(!iso)return "";const [y,m,d]=iso.split("-").map(Number);const o={day:"numeric",month:"short"}; if(y!==new Date().getFullYear()) o.year="numeric"; return new Date(y,m-1,d).toLocaleDateString("en-GB",o);}
+function stageDone(s){return !!s.done;}
+function dueChip(s){
+  if(stageDone(s)) return '<span class="chip done">Done</span>';
+  const n=daysUntil(s.due); if(n===null) return '<span class="chip">No deadline</span>';
+  if(n<0) return `<span class="chip over">${-n}d overdue</span>`;
+  if(n===0) return '<span class="chip over">Due today</span>';
+  if(n===1) return '<span class="chip soon">Tomorrow</span>';
+  if(n<=7) return `<span class="chip soon">${n} days · ${fmtDate(s.due)}</span>`;
+  return `<span class="chip">${fmtDate(s.due)} · ${n}d</span>`;
+}
+function sortStages(st){return [...st].sort((a,b)=>(stageDone(a)-stageDone(b))||((a.due||"9999")<(b.due||"9999")?-1:(a.due||"9999")>(b.due||"9999")?1:0));}
+function list(){return Object.values(projects).sort((a,b)=>(a.order||0)-(b.order||0));}
+function pc(p){return `--pc:var(--p-${COLORS.includes(p.color)?p.color:"blue"})`;}
+
+/* ---------- saving (on this phone) ---------- */
+const KEY="workbench-projects-v1";
+function persist(){
+  try{localStorage.setItem(KEY,JSON.stringify(projects));saveError="";lastSaved=Date.now();}
+  catch(e){saveError="Couldn't save on this phone. Free up some storage and try again.";}
+  setSaveLabel();
+}
+function scheduleSave(id,delay=400){
+  clearTimeout(timers.all); timers.all=setTimeout(()=>{delete timers.all;persist();},delay); setSaveLabel();
+}
+function flush(){clearTimeout(timers.all);delete timers.all;persist();}
+function setSaveLabel(){
+  const el=document.getElementById("save"); if(!el) return;
+  el.textContent=saveError||(timers.all?"Saving…":(lastSaved?"Saved on this phone":""));
+}
+window.addEventListener("pagehide",()=>{if(timers.all) flush();});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&timers.all) flush();});
+
+/* ---------- render ---------- */
+function render(){
+  const ae=document.activeElement, fid=ae&&ae.id, sel=(ae&&"selectionStart" in ae)?[ae.selectionStart,ae.selectionEnd]:null;
+  const p=projects[ui.view];
+  if(ui.view!=="home" && !p && ready) ui.view="home";
+  app.innerHTML = (ui.view!=="home"&&p) ? detail(p) : home();
+  fitAll();
+  if(fid){const el=document.getElementById(fid); if(el){el.focus({preventScroll:true}); if(sel&&el.setSelectionRange){try{el.setSelectionRange(sel[0],sel[1]);}catch(e){}}}}
+  setSaveLabel();
+}
+function header(){
+  const d=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  return `<div class="top"><div><h1>Project Workbench</h1><div class="today">${d}</div></div>
+  <div style="display:grid;justify-items:end;gap:6px"><button class="btn primary" data-act="new-project">+ New project</button><div class="save" id="save" aria-live="polite"></div></div></div>`;
+}
+function home(){
+  const ps=list();
+  if(!ready) return header()+`<section><div class="agenda"><div class="empty">Loading your projects…</div></div></section>`;
+  const up=[];
+  ps.forEach(p=>(p.stages||[]).forEach(s=>{if(!stageDone(s)&&s.due) up.push({p,s});}));
+  up.sort((a,b)=>a.s.due<b.s.due?-1:1);
+  const ag = up.length? up.slice(0,7).map(({p,s})=>`<button class="ag-row" style="${pc(p)}" data-act="open" data-id="${p.id}">
+      <span class="dot"></span><span style="min-width:0"><div class="ag-title">${esc(s.title||"Untitled stage")}</div><div class="ag-proj">${esc(p.name)}</div></span>${dueChip(s)}</button>`).join("")
+    : `<div class="empty">No upcoming deadlines. Open a project and give a stage a date.</div>`;
+  const cards = ps.map(p=>{
+    const st=p.stages||[], done=st.filter(stageDone).length;
+    const nx=sortStages(st).find(s=>!stageDone(s));
+    const track = st.length? `<div class="track" aria-label="${done} of ${st.length} ${LB(p).many} done">${sortStages(st).map(s=>`<i class="${stageDone(s)?"on":""}"></i>`).join("")}</div>`:`<div class="track"><i></i></div>`;
+    return `<button class="card" style="${pc(p)}" data-act="open" data-id="${p.id}">
+      <h3><span class="dot"></span><span>${esc(p.name||"Untitled project")}</span></h3>
+      ${track}
+      <div class="meta">${st.length?`${done} of ${st.length} ${LB(p).many} done`:`No ${LB(p).many} yet`}</div>
+      ${nx?`<div class="next"><span>Next: ${esc(nx.title||"Untitled")}</span>${dueChip(nx)}</div>`:""}
+    </button>`;}).join("");
+  return header()+
+   `<section><div class="sec-head"><h2>Coming up</h2><span class="label">${up.length} open deadline${up.length===1?"":"s"}</span></div><div class="agenda">${ag}</div></section>
+    <section><div class="sec-head"><h2>Projects</h2><span class="label">${ps.length}</span></div>
+    <div class="cards">${cards}<button class="card add" data-act="new-project">+ New project</button></div></section>
+    <section class="backup"><div class="sec-head"><h2>Backup</h2></div>
+      <p class="muted">Your projects are saved on this phone only. Save a backup file now and then, so you can restore everything if you reinstall the app or switch phones.</p>
+      <div class="new-row"><button class="btn" data-act="export">Save backup file</button>
+      <label class="btn" for="import-file">Restore from backup</label><input type="file" id="import-file" accept="application/json,.json" hidden></div>
+      ${ui.importMsg?`<div class="note" style="margin-top:10px">${esc(ui.importMsg)}</div>`:""}
+    </section>`;
+}
+function detail(p){
+  const st=p.stages||[], done=st.filter(stageDone).length;
+  const steps=st.flatMap(s=>s.steps||[]), sdone=steps.filter(x=>x.done).length;
+  const nx=sortStages(st).find(s=>!stageDone(s)&&s.due);
+  const sw=COLORS.map(c=>`<button class="sw ${p.color===c?"on":""}" style="--pc:var(--p-${c})" data-act="color" data-c="${c}" aria-label="${c} colour"></button>`).join("");
+  const mode=viewMode(p);
+  const stages=sortStages(st).map(s=>stageHTML(p,s)).join("") || `<div class="empty" style="padding:4px 0">No ${LB(p).many} yet. Add the first one below, for example “${LB(p).eg}” with a deadline.</div>`;
+  return `<div class="top" style="margin-bottom:12px"><button class="btn ghost back" data-act="back">← All projects</button><div class="save" id="save" aria-live="polite"></div></div>
+  <div class="p-head" style="${pc(p)}">
+    <textarea class="p-name wrap" rows="1" id="p-name" data-f="name" enterkeyhint="done" aria-label="Project name" placeholder="Project name">${esc(p.name)}</textarea>
+    <textarea class="p-about" id="p-about" data-f="about" rows="2" placeholder="What is this project? Add a goal or notes" aria-label="Project notes">${esc(p.about)}</textarea>
+    <div class="swatches"><span class="label" style="margin-right:4px">Colour</span>${sw}</div>
+    <div class="swatches"><span class="label" style="margin-right:4px">Call them</span><div class="seg" role="group" aria-label="Call them"><button data-act="label" data-v="stages" aria-pressed="${p.unitLabel!=="units"}">Stages</button><button data-act="label" data-v="units" aria-pressed="${p.unitLabel==="units"}">Units/models</button></div></div>
+    <div class="p-stats"><span>${LB(p).count} <b>${done}/${st.length}</b></span><span>Steps <b>${sdone}/${steps.length}</b></span>${nx?`<span>Next deadline <b>${fmtDate(nx.due)}</b></span>`:""}</div>
+  </div>
+
+  <section style="${pc(p)}"><div class="sec-head"><h2>${mode==="groups"?"Steps by task":LB(p).heading}</h2><div class="sec-tools">
+      ${steps.length?`<div class="seg" role="group" aria-label="View"><button data-act="mode" data-v="stages" aria-pressed="${mode==="stages"}">Stages</button><button data-act="mode" data-v="groups" aria-pressed="${mode==="groups"}">By task</button></div>`:""}
+      ${st.length&&mode==="stages"?`<button class="btn" data-act="fold-all" data-v="${st.every(s=>s.collapsed)?"0":"1"}">${st.every(s=>s.collapsed)?"Expand all":"Collapse all"}</button>`:""}</div></div>
+    ${mode==="groups"?groupsHTML(p):`<div class="stages">${stages}</div>`}
+    <div class="new-stage" style="margin-top:12px">
+      <span class="label">Add a ${LB(p).one}</span>
+      <form class="new-row" id="ns-form" autocomplete="off"><input type="text" id="ns-title" enterkeyhint="enter" placeholder="${LB(p).One} name, e.g. ${LB(p).eg}" aria-label="New ${LB(p).one} name">
+      <input type="date" class="date" id="ns-due" aria-label="New stage deadline">
+      <button class="btn primary" type="submit">Add ${LB(p).one}</button></form>
+    </div>
+  </section>
+  <div class="danger-zone">${ui.confirm==="project"
+    ?`<div class="confirm">Delete “${esc(p.name)}” and all its stages? <button class="btn danger" data-act="del-project-yes">Delete project</button><button class="btn" data-act="cancel">Keep it</button></div>`
+    :`<button class="btn danger" data-act="del-project">Delete project</button>`}</div>`;
+}
+/* ---------- paints list ---------- */
+// Reads paint names and tone numbers out of step text, e.g. "Lustria Green 3, shade 1-2, highlight 4-5".
+const LEAD=new Set("Base Basecoat Layer Shade Highlight Highlights Glaze Glint Prime Paint Drybrush Edge Muzzle Points Fill Soften Sketch Stipple Whole Light Very Optional Then Mix Wash Apply Dot Dab Undercoat The".split(" "));
+const NAME_RE=/([A-Z][a-z'][A-Za-z']*(?: (?:of |the )?[A-Z][a-z'][A-Za-z']*)*) (\d)(?:\s*(?:-|to)\s*(\d))?(?![\dx.]|mm)/g;
+const MORE_RE=/\s*[,;]?\s*(?:shade|highlight|edge|layer|then|and)?\s*(\d)(?:\s*(?:-|to)\s*(\d))?(?![\dx.]|mm)/y;
+const SUPPLIES=[["Shading Medium",/shading medium/i],["Blending Medium",/blending medium/i],["Gloss varnish",/gloss varnish/i],["Matt varnish",/matt varnish/i],
+  ["Mud texture paste",/texture paste/i],["Fine sand and small stones",/fine sand|small stones/i],["PVA glue",/\bPVA\b/],["Static grass (2-4mm)",/static grass/i],
+  ["Tufts or flowers",/\btufts\b/i],["Masking tape",/\btape\b/i],["Pencil",/\bpencil\b/i],["Toothpick",/toothpick/i],["Drybrush brush",/drybrush/i]];
+function addTones(set,a,b){a=+a;b=b==null?a:+b;if(b<a)[a,b]=[b,a];for(let i=a;i<=b&&i<=9;i++)set.add(i);}
+function paintsFrom(texts){
+  const paints=new Map(), supplies=new Set();
+  texts.forEach(tx=>{
+    NAME_RE.lastIndex=0; let m;
+    while((m=NAME_RE.exec(tx))){
+      let words=m[1].split(" "); while(words.length&&LEAD.has(words[0])) words.shift();
+      if(words[0]==="of"||words[0]==="the") words.shift();
+      if(!words.length) continue;
+      const name=words.join(" "); if(!paints.has(name)) paints.set(name,new Set());
+      const set=paints.get(name); addTones(set,m[2],m[3]);
+      MORE_RE.lastIndex=NAME_RE.lastIndex; let n;
+      while((n=MORE_RE.exec(tx))){addTones(set,n[1],n[2]); NAME_RE.lastIndex=MORE_RE.lastIndex;}
+    }
+    SUPPLIES.forEach(([nm,re])=>{if(re.test(tx)) supplies.add(nm);});
+  });
+  const list=[...paints.entries()].map(([name,set])=>({name,tones:[...set].sort((a,b)=>a-b)})).sort((a,b)=>a.name.localeCompare(b.name));
+  return {list, supplies:SUPPLIES.map(x=>x[0]).filter(n=>supplies.has(n))};
+}
+function toneText(t){const out=[];for(let i=0;i<t.length;i++){let j=i;while(j+1<t.length&&t[j+1]===t[j]+1)j++;out.push(j>i+1?t[i]+"–"+t[j]:j===i+1?t[i]+", "+t[j]:""+t[i]);i=j;}return out.join(", ");}
+function openSteps(p){const out=[];(p.stages||[]).forEach(s=>{if(s.done)return;(s.steps||[]).forEach(t=>{if(!t.done) out.push(t.text||"");});});return out;}
+function paintsHTML(p){
+  const {list,supplies}=paintsFrom(openSteps(p));
+  if(!list.length&&!supplies.length) return "";
+  const isOpen=!!ui.paintsOpen[p.id], got=ui.pots[p.id]||{};
+  const keys=[...list.flatMap(x=>x.tones.map(t=>x.name+"|"+t)),...supplies];
+  const out=keys.filter(k=>got[k]).length;
+  let body="";
+  if(isOpen){
+    body=`<div class="pt-body"><p class="pt-note">Every paint and tone used in the steps you haven't ticked off yet. Tap each pot as you get it out.</p>
+      <div class="pt-list">${list.map(x=>`<div class="pt-row"><span class="pt-name">${esc(x.name)}</span><span class="pt-tones">${x.tones.map(t=>{const k=x.name+"|"+t;return `<button class="pot" data-act="pot" data-k="${esc(k)}" aria-pressed="${!!got[k]}" aria-label="${esc(x.name)} ${t}">${t}</button>`;}).join("")}</span></div>`).join("")}</div>
+      ${supplies.length?`<div class="pt-sub">Mediums &amp; supplies</div><div class="pt-list">${supplies.map(n=>`<div class="pt-row"><span class="pt-name">${esc(n)}</span><span class="pt-tones"><button class="pot" data-act="pot" data-k="${esc(n)}" aria-pressed="${!!got[n]}" aria-label="${esc(n)}">✓</button></span></div>`).join("")}</div>`:""}
+      <div class="pt-tools"><span class="pt-note">${out} of ${keys.length} out</span>${out?`<button class="btn" data-act="pots-clear">Clear ticks</button>`:""}</div></div>`;
+  }
+  return `<div class="paints ${isOpen?"open":""}" style="${pc(p)}">
+    <button class="pt-head" data-act="paints" aria-expanded="${isOpen}"><span class="fold" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <h2>All paints for this project</h2><span class="chip">${list.length} paints · ${list.reduce((a,x)=>a+x.tones.length,0)} pots</span></button>${body}</div>`;
+}
+
+/* ---------- grouping steps by task ---------- */
+// Rules run in order; the first match wins. Each tests the step text, then (where noted) the stage name.
+const GROUPS=[
+  {name:"Plans & colour schemes", t:/^(scheme|duke colours|heraldry:|decide|keep gold trim|banner carries|purchase|buy)/i},
+  {name:"Basing", s:/basing/i, t:/static grass|base rims?\b|texture paste|matt varnish/i},
+  {name:"Priming", t:/^prime\b|\bprime (rider|horse|grey|white|black)|undercoat|zenithal/i},
+  {name:"Metallics", t:/metallic/i},
+  {name:"Edge highlights & tidy-up", t:/^edge highlights?\b|tidy-up/i},
+  {name:"Details & weathering", t:/^weathering|^details?\b|musician|champion|\bgems?\b|grail/i},
+  {name:"Surcoats, tabards & caparisons", t:/surcoat|tabard|caparison|pennant/i},
+  {name:"Banners", t:/banner/i},
+  {name:"Horses", t:/horse|hoove?s?\b|mane|muzzle|nostril|^points\b/i, s:/\bhorses\b/i},
+  {name:"Shields & heraldry", t:/shield|heraldry|fleur|chevron|roundel|annulet|torteaux|mullet|stars?\b|bordure|canton|chief|lozeng|chequy|quarters|wedge|saltire|\bcross\b|\bbend\b|\bfess\b|stripes?|grid|diamonds|wavy/i},
+  {name:"Skin, faces & hair", t:/^(skin|lips|eyes|hair)\b/i},
+  {name:"Cloth & bodies", t:/bod(y|ies)|dress|cloak|saddle cloth|hose|sleeves|undershirt|padding|plume|trim/i},
+  {name:"Leather & wood", t:/leather|reins|belts|straps|boots|haft|pole|staff/i},
+];
+function groupOf(step,stage){
+  if(step.group) return step.group;
+  const tx=step.text||"", st=stage.title||"";
+  for(const g of GROUPS){ if((g.t&&g.t.test(tx))||(g.s&&g.s.test(st))) return g.name; }
+  return null;
+}
+function shortStage(t){t=t||"Untitled stage";const i=t.indexOf(":");return i>0&&i<30?t.slice(0,i):t;}
+function viewMode(p){return (ui.modes&&ui.modes[p.id])||"stages";}
+function groupsHTML(p){
+  const order=GROUPS.map(g=>g.name), map=new Map();
+  sortStages(p.stages||[]).forEach(s=>(s.steps||[]).forEach(t=>{
+    const g=groupOf(t,s)||"Other: "+shortStage(s.title);
+    if(!map.has(g)) map.set(g,[]); map.get(g).push({s,t});
+  }));
+  const keys=[...map.keys()].sort((a,b)=>{const ia=order.indexOf(a),ib=order.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b);});
+  if(!keys.length) return `<div class="empty" style="padding:4px 0">No steps yet. Add steps to your stages and they'll be grouped here by task.</div>`;
+  const open=ui.openGroups[p.id]||{};
+  return `<p class="g-hint">Every step from every ${LB(p).one}, grouped by what you're doing, so you can batch them: all the horses, then all the shields.</p><div class="groups">`+keys.map((g,gi)=>{
+    const items=map.get(g), done=items.filter(x=>x.t.done).length, isOpen=!!open[g];
+    let body="";
+    if(isOpen){
+      const byStage=new Map(); items.forEach(x=>{if(!byStage.has(x.s.id)) byStage.set(x.s.id,{s:x.s,ts:[]}); byStage.get(x.s.id).ts.push(x.t);});
+      const gp=paintsFrom(items.filter(x=>!x.t.done&&!x.s.done).map(x=>x.t.text||""));
+      const gpLine=(gp.list.length||gp.supplies.length)?`<div class="g-paints"><b>Paints:</b> ${gp.list.map(x=>esc(x.name)+" "+toneText(x.tones)).join(" · ")}${gp.supplies.length?(gp.list.length?" · ":"")+gp.supplies.map(esc).join(" · "):""}</div>`:"";
+      body=`<div class="g-body">`+gpLine+[...byStage.values()].map(({s,ts})=>`<div class="g-stage"><div class="g-stage-name">${esc(s.title||"Untitled stage")}</div>`+
+        ts.map(t=>`<div class="step ${t.done?"done":""}">
+          <input type="checkbox" class="check" id="gck-${t.id}" data-act="toggle-step" data-s="${s.id}" data-t="${t.id}" ${t.done?"checked":""} aria-label="Step done">
+          <textarea class="step-text wrap" rows="1" id="gtx-${t.id}" data-f="step" data-s="${s.id}" data-t="${t.id}" enterkeyhint="done" aria-label="Step">${esc(t.text)}</textarea><span></span><span></span>${photosHTML(s,t,false)}</div>`).join("")+`</div>`).join("")+`</div>`;
+    }
+    return `<div class="group ${isOpen?"open":""} ${done===items.length?"all-done":""}">
+      <button class="g-head" data-act="group" data-g="${esc(g)}" aria-expanded="${isOpen}">
+        <span class="fold" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <h3>${esc(g)}</h3><span class="chip ${done===items.length?"done":""}">${done}/${items.length}</span>
+        <span></span><span class="g-bar"><i style="width:${items.length?Math.round(done/items.length*100):0}%"></i></span>
+      </button>${body}</div>`;
+  }).join("")+`</div>`;
+}
+function LB(p){return p&&p.unitLabel==="units"
+  ?{one:"unit/model",many:"units/models",One:"Unit/model",heading:"Units &amp; models",count:"Units",eg:"10 Men at arms"}
+  :{one:"stage",many:"stages",One:"Stage",heading:"Stages &amp; milestones",count:"Stages",eg:"Record pilot"};}
+function stagePaintsHTML(p,s){
+  if(s.done) return "";
+  const {list,supplies}=paintsFrom((s.steps||[]).filter(t=>!t.done).map(t=>t.text||""));
+  if(!list.length&&!supplies.length) return "";
+  const got=ui.pots[p.id]||{};
+  return `<div class="st-paints"><span class="label">Paints for this ${LB(p).one}</span>`+
+    list.map(x=>`<span class="sp"><span class="sp-name">${esc(x.name)}</span>${x.tones.map(t=>{const k=x.name+"|"+t;return `<button class="pot sm" data-act="pot" data-k="${esc(k)}" aria-pressed="${!!got[k]}" aria-label="${esc(x.name)} ${t}">${t}</button>`;}).join("")}</span>`).join("")+
+    (supplies.length?`<span class="sp-sup">Also: ${supplies.map(esc).join(", ")}</span>`:"")+`</div>`;
+}
+/* ---------- heraldry: a shield beside each knight (and the Duke's household) ---------- */
+const ARMS=(()=>{
+  const C={az:"#1f5aa6",or:"#e3b23c",gu:"#b8262d",ar:"#f2f2f0",sa:"#1e1e1e",ve:"#2e7d3e",pu:"#6b2d7b"};
+  const F="M0 -18 C6 -10 6 -2 0 4 C-6 -2 -6 -10 0 -18 Z M-2 3 C-8 4 -15 0 -14 -8 C-13 -12 -9 -12 -8 -9 C-11 -8 -11 -3 -6 -1 Z M2 3 C8 4 15 0 14 -8 C13 -12 9 -12 8 -9 C11 -8 11 -3 6 -1 Z M-8 3 H8 V7 H-8 Z M-4 7 L0 16 L4 7 Z";
+  const FL="M0 -18 C-6 -10 -6 -2 0 4 Z M-2 3 C-8 4 -15 0 -14 -8 C-13 -12 -9 -12 -8 -9 C-11 -8 -11 -3 -6 -1 Z M-8 3 H0 V7 H-8 Z M-4 7 L0 16 L0 7 Z";
+  const ST="M0 -10 L2.35 -3.24 L9.51 -3.09 L3.8 1.24 L5.88 8.09 L0 4 L-5.88 8.09 L-3.8 1.24 L-9.51 -3.09 L-2.35 -3.24 Z";
+  const SH="M0 0 H110 V60 Q110 110 55 130 Q0 110 0 60 Z";
+  const r=(x,y,w,h,c)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
+  const fl=(x,y,k,c,d=F)=>`<path transform="translate(${x},${y}) scale(${k})" fill="${c}" d="${d}"/>`;
+  const star=(x,y,k,c)=>`<path transform="translate(${x},${y}) scale(${k})" fill="${c}" d="${ST}"/>`;
+  const ln=(x1,y1,x2,y2,c,w)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}"/>`;
+  const circ=(x,y,rr,c)=>`<circle cx="${x}" cy="${y}" r="${rr}" fill="${c}"/>`;
+  let cheq=r(0,0,110,132,C.az); for(let y=0;y<6;y++)for(let x=0;x<5;x++)if((x+y)%2===0)cheq+=r(x*22,y*22,22,22,C.or);
+  let loz=r(0,0,110,130,C.ar); for(let y=-15;y<=135;y+=30)for(let x=0;x<=110;x+=22)loz+=`<path fill="${C.gu}" d="M${x},${y} l11,15 l-11,15 l-11,-15z"/>`;
+  const scal=[[20,11],[34,11],[48,11],[62,11],[76,11],[90,11],[11,24],[11,38],[11,52],[11,66],[99,24],[99,38],[99,52],[99,66],[15,81],[25,95],[39,107],[55,115],[71,107],[85,95],[95,81]].map(([x,y])=>circ(x,y,5,C.pu)).join("");
+  const duke=r(0,0,55,130,C.or)+r(55,0,55,130,C.az)+fl(55,60,2.2,C.or)+fl(55,60,2.2,C.az,FL);
+  const A={
+    kh01:duke,
+    kh02:r(0,0,110,130,C.gu)+ln(-5,-6,115,136,C.or,24)+fl(82,34,1.1,C.ar)+fl(28,88,1.1,C.ar),
+    kh03:r(0,0,55,65,C.sa)+r(55,0,55,65,C.ar)+r(0,65,55,65,C.ar)+r(55,65,55,65,C.sa)
+      +`<path d="M18 52 L22 40 L18 30 L14 22 L16 14 L22 12 L26 16 L30 14 L34 18 L30 22 L32 30 L38 34 L42 30 L44 34 L40 40 L34 42 L34 50 L40 56 L32 56 L28 48 L24 56 L16 56 Z" fill="${C.or}"/><path d="M18 50 C8 48 6 40 10 34 C12 30 8 28 6 30" fill="none" stroke="${C.or}" stroke-width="2.5"/>`
+      +ln(31,18,42,10,C.or,3)+ln(31,24,41,21,C.or,3),
+    kh04:r(0,0,110,130,C.ve)+`<polyline points="-4,104 55,42 114,104" fill="none" stroke="${C.ar}" stroke-width="18"/>`+star(26,28,1.2,C.or)+star(84,28,1.2,C.or)+star(55,94,1.2,C.or),
+    kh05:r(0,38,110,93,C.ar)+r(0,53.4,110,15.4,C.az)+r(0,84.2,110,15.4,C.az)+r(0,115,110,16,C.az)+r(0,0,110,38,C.gu)+fl(23,20,.72,C.or)+fl(55,20,.72,C.or)+fl(87,20,.72,C.or),
+    kh06:r(0,0,110,130,C.ar)+`<path d="M11 11 H99 V60 Q99 101 55 118 Q11 101 11 60 Z" fill="${C.pu}"/>`+scal+ln(16,16,90,108,C.or,14)+ln(94,16,20,108,C.or,14),
+    kh07:r(0,0,110,130,C.az)+`<path d="M10 10 H100 V60 Q100 102 55 119 Q10 102 10 60 Z" fill="${C.ar}"/>`+r(46,10,18,108,C.gu)+r(10,42,90,18,C.gu),
+    kh08:r(0,0,110,130,C.sa)+`<polygon points="0,112 55,50 110,112 110,140 0,140" fill="${C.or}"/>`+circ(28,30,11,C.or)+circ(82,30,11,C.or)+circ(55,96,11,C.sa),
+    kh09:cheq+r(0,0,44,44,C.gu),
+    kh10:r(0,0,110,130,C.az)+ln(-6,-6,55,55,C.or,20)+ln(116,-6,55,55,C.or,20)+ln(55,55,55,135,C.or,20)+circ(55,55,10,C.or),
+    kh11:r(0,0,110,130,C.sa)+`<polygon points="14,0 96,0 55,118" fill="${C.or}"/>`+star(55,30,1.5,C.sa),
+    kh12:r(0,0,110,130,C.ve)+`<g fill="${C.ar}"><polygon points="55,60 55,-100 215,-100"/><polygon points="55,60 215,60 215,220"/><polygon points="55,60 55,220 -105,220"/><polygon points="55,60 -105,60 -105,-100"/></g>`,
+    kh13:r(0,0,110,130,C.or)+r(0,48,110,32,C.az)+circ(28,25,10,C.gu)+circ(82,25,10,C.gu)+circ(55,104,10,C.gu),
+    kh14:loz,
+    kh15:r(0,0,110,130,C.az)+`<polygon points="0,0 55,65 0,130" fill="${C.ar}"/><polygon points="110,0 55,65 110,130" fill="${C.ar}"/>`,
+    kh16:r(0,0,110,130,C.or)+r(18.33,0,18.4,130,C.gu)+r(55,0,18.4,130,C.gu)+r(91.67,0,18.4,130,C.gu),
+    kh17:r(0,0,110,130,C.az)+ln(115,-6,-5,136,C.ar,24)+star(26,30,1.3,C.or)+star(80,94,1.3,C.or),
+    kh18:r(0,0,110,130,C.gu)+r(0,0,110,38,C.or)+`<g fill="none" stroke="${C.ar}" stroke-width="5"><circle cx="34" cy="64" r="10"/><circle cx="76" cy="64" r="10"/><circle cx="55" cy="96" r="10"/></g>`,
+    kh19:r(0,0,110,130,C.ve)+`<path d="M0 52 q13.75 -8 27.5 0 t27.5 0 t27.5 0 t27.5 0 V78 q-13.75 8 -27.5 0 t-27.5 0 t-27.5 0 t-27.5 0 Z" fill="${C.ar}"/>`,
+    kh20:r(0,0,110,130,C.pu)+`<g transform="rotate(49.8 55 65)" fill="${C.ar}"><rect x="-65" y="-19" width="240" height="28"/><rect x="-65" y="37" width="240" height="28"/><rect x="-65" y="93" width="240" height="28"/></g>`,
+    kh21:r(0,0,55,65,C.gu)+r(55,0,55,65,C.or)+r(0,65,55,65,C.or)+r(55,65,55,65,C.gu)+`<path d="${SH}" fill="none" stroke="${C.sa}" stroke-width="22"/>`,
+    kh22:r(0,0,110,130,C.or)+`<g fill="none" stroke="${C.gu}" stroke-width="10"><polyline points="-5,86 55,26 115,86"/><polyline points="-5,114 55,54 115,114"/><polyline points="-5,142 55,82 115,142"/></g>`,
+    "7cox5l6v":r(0,0,110,65,C.az)+r(0,65,110,65,C.or)+fl(55,33,1.25,C.or),
+    uhek3ago:duke
+  };
+  return {A,SH};
+})();
+function armsHTML(s){
+  const art=ARMS.A[s.id]; if(!art) return "";
+  const cid="arms-"+String(s.id).replace(/[^a-z0-9-]/gi,"");
+  return `<span class="st-arms" role="img" aria-label="${esc("Arms: "+(s.title||""))}"><svg viewBox="0 0 110 130" aria-hidden="true"><defs><clipPath id="${cid}"><path d="${ARMS.SH}"/></clipPath></defs><g clip-path="url(#${cid})">${art}</g><path d="${ARMS.SH}" fill="none" stroke="var(--muted)" stroke-width="3"/></svg></span>`;
+}
+function stageHTML(p,s){
+  const steps=(s.steps||[]).map(t=>`<div class="step ${t.done?"done":""}">
+      <input type="checkbox" class="check" id="ck-${t.id}" data-act="toggle-step" data-s="${s.id}" data-t="${t.id}" ${t.done?"checked":""} aria-label="Step done">
+      <textarea class="step-text wrap" rows="1" id="tx-${t.id}" data-f="step" data-s="${s.id}" data-t="${t.id}" enterkeyhint="done" aria-label="Step">${esc(t.text)}</textarea>
+      <button class="cam" data-act="add-photo" data-s="${s.id}" data-t="${t.id}" aria-label="Add reference photo" title="Add reference photo" ${photoBusy?"disabled":""}>${CAM}</button>
+      <button class="x" data-act="del-step" data-s="${s.id}" data-t="${t.id}" aria-label="Remove step">×</button>${photosHTML(s,t,true)}</div>`).join("");
+  const n=(s.steps||[]).length, d=(s.steps||[]).filter(t=>t.done).length;
+  return `<div class="stage ${stageDone(s)?"is-done":""} ${s.collapsed?"is-folded":""}">
+    <div class="st-top">
+      <button class="fold" data-act="fold" data-s="${s.id}" aria-expanded="${s.collapsed?"false":"true"}" aria-label="${s.collapsed?"Expand":"Collapse"} ${LB(p).one}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <input type="checkbox" class="check" id="sd-${s.id}" data-act="toggle-stage" data-s="${s.id}" ${s.done?"checked":""} aria-label="${LB(p).One} complete">
+      <textarea class="st-title wrap" rows="1" id="st-${s.id}" data-f="stage-title" data-s="${s.id}" enterkeyhint="done" placeholder="${LB(p).One} name" aria-label="${LB(p).One} name">${esc(s.title)}</textarea>
+      <button class="x" data-act="del-stage" data-s="${s.id}" aria-label="Delete ${LB(p).one}">×</button>
+      <div class="st-meta">${armsHTML(s)}${dueChip(s)}<input type="date" class="date" id="du-${s.id}" data-f="stage-due" data-s="${s.id}" value="${esc(s.due||"")}" aria-label="Deadline">
+        ${n?`<span class="chip">${d}/${n} steps</span>`:""}${s.example?'<span class="chip ex">Example</span>':""}</div>
+    </div>
+    ${ui.confirm==="stage:"+s.id?`<div class="confirm">Delete this ${LB(p).one}? <button class="btn danger" data-act="del-stage-yes" data-s="${s.id}">Delete</button><button class="btn" data-act="cancel">Cancel</button></div>`:""}
+    ${stagePaintsHTML(p,s)}
+    <div class="steps">${steps}
+      <form class="step-form" data-s="${s.id}" autocomplete="off"><input class="add-step" id="as-${s.id}" data-s="${s.id}" enterkeyhint="enter" placeholder="+ Add a step and press Enter" aria-label="Add a step"></form></div>
+  </div>`;
+}
+
+/* ---------- actions ---------- */
+function cur(){return projects[ui.view];}
+function stage(p,sid){return (p.stages||[]).find(s=>s.id===sid);}
+function setView(v){ui.view=v;ui.confirm=null;try{localStorage.setItem("pw-view",v);}catch(e){} render(); window.scrollTo(0,0);}
+function touch(s){if(s) s.example=false;}
+
+/* ---------- reference photos (kept on this phone, in IndexedDB) ---------- */
+const CAM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const photoUrls={}, photoLoading={};
+let photoDB=null, photoBusy=false, photoTarget=null;
+function pdb(){
+  if(photoDB) return photoDB;
+  photoDB=new Promise((res,rej)=>{try{const r=indexedDB.open("workbench-photos",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("photos");
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}catch(e){rej(e);}});
+  return photoDB;
+}
+function pdbDo(mode,fn){return pdb().then(db=>new Promise((res,rej)=>{const tx=db.transaction("photos",mode);const st=tx.objectStore("photos");const r=fn(st);tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error);}));}
+const putPhoto=(id,blob)=>pdbDo("readwrite",st=>st.put(blob,id));
+const getPhoto=id=>pdbDo("readonly",st=>st.get(id));
+const delPhoto=id=>pdbDo("readwrite",st=>st.delete(id));
+function photoSrc(ref){
+  ref=String(ref||"");
+  if(!ref.startsWith("idb:")) return /^[a-z0-9/_.-]+$/i.test(ref)?ref:"";
+  const id=ref.slice(4);
+  if(photoUrls[id]) return photoUrls[id];
+  if(!photoLoading[id]){photoLoading[id]=1; getPhoto(id).then(b=>{if(b){photoUrls[id]=URL.createObjectURL(b);render();}}).catch(()=>{});}
+  return "";
+}
+function photoUses(ref){return Object.values(projects).reduce((n,p)=>n+(p.stages||[]).reduce((m,s)=>m+(s.steps||[]).filter(t=>(t.images||[]).includes(ref)).length,0),0);}
+function shrink(file){
+  return new Promise(res=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{const k=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement("canvas");
+      c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); c.toBlob(b=>res(b||file),"image/jpeg",0.85);};
+    img.onerror=()=>{URL.revokeObjectURL(url);res(file);};
+    img.src=url;
+  });
+}
+function photosHTML(s,t,editable){
+  const refs=t.images||[]; const pending=(ui.confirm||"").startsWith("photo:"+t.id+"|");
+  if(!refs.length&&!pending) return "";
+  const th=refs.map((ref,i)=>{const src=photoSrc(ref);return `<div class="thumb"><button class="thumb-open" data-act="view-photo" data-ref="${esc(ref)}" aria-label="Open reference photo ${i+1}">${src?`<img src="${esc(src)}" alt="Reference photo ${i+1}" loading="lazy">`:""}</button>${editable?`<button class="thumb-rm" data-act="del-photo" data-s="${s.id}" data-t="${t.id}" data-ref="${esc(ref)}" aria-label="Remove photo">×</button>`:""}</div>`;}).join("");
+  const conf=pending&&editable?`<div class="confirm">Remove this photo? <button class="btn danger" data-act="del-photo-yes" data-s="${s.id}" data-t="${t.id}" data-ref="${esc(ui.confirm.split("|")[1])}">Remove</button><button class="btn" data-act="cancel">Keep it</button></div>`:"";
+  return (th?`<div class="thumbs">${th}</div>`:"")+conf;
+}
+const lb=document.getElementById("lb"), lbImg=document.getElementById("lb-img"), photoInput=document.getElementById("photo-input");
+function openLB(ref){const src=photoSrc(ref); if(!src) return; lbImg.src=src; lb.hidden=false; document.getElementById("lb-close").focus();}
+function closeLB(){lb.hidden=true; lbImg.removeAttribute("src");}
+lb.addEventListener("click",e=>{if(e.target===lb||e.target.id==="lb-close") closeLB();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!lb.hidden) closeLB();});
+photoInput.addEventListener("change",async()=>{
+  const f=photoInput.files&&photoInput.files[0]; photoInput.value="";
+  const tg=photoTarget; photoTarget=null; if(!f||!tg) return;
+  photoBusy=true; render();
+  try{
+    const blob=await shrink(f), id=uid()+uid();
+    await putPhoto(id,blob); photoUrls[id]=URL.createObjectURL(blob);
+    const p=projects[tg.p], s=p&&stage(p,tg.s), t=s&&(s.steps||[]).find(x=>x.id===tg.t);
+    if(t){t.images=(t.images||[]).concat("idb:"+id); touch(s); scheduleSave(p.id,0);}
+    saveError="";
+  }catch(e){saveError="Couldn't save that photo on this phone. Free up some storage and try again.";}
+  photoBusy=false; render();
+});
+
+app.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const a=b.dataset.act, p=cur();
+  if(a==="open") return setView(b.dataset.id);
+  if(a==="back") return setView("home");
+  if(a==="paints"&&p){if(ui.paintsOpen[p.id])delete ui.paintsOpen[p.id];else ui.paintsOpen[p.id]=1;saveUI();render();return;}
+  if(a==="label"&&p){p.unitLabel=b.dataset.v==="units"?"units":"";if(!p.unitLabel)delete p.unitLabel;scheduleSave(p.id,0);render();return;}
+  if(a==="pot"&&p){const o=ui.pots[p.id]=ui.pots[p.id]||{},k=b.dataset.k;if(o[k])delete o[k];else o[k]=1;saveUI();render();return;}
+  if(a==="pots-clear"&&p){delete ui.pots[p.id];saveUI();render();return;}
+  if(a==="mode"&&p){ui.modes[p.id]=b.dataset.v;saveUI();render();return;}
+  if(a==="group"&&p){const o=ui.openGroups[p.id]=ui.openGroups[p.id]||{};const g=b.dataset.g;if(o[g])delete o[g];else o[g]=1;saveUI();render();return;}
+  if(a==="fold"&&p){const s=stage(p,b.dataset.s); if(s){s.collapsed=!s.collapsed; scheduleSave(p.id); render();} return;}
+  if(a==="fold-all"&&p){const v=b.dataset.v==="1"; (p.stages||[]).forEach(s=>s.collapsed=v); scheduleSave(p.id); render(); return;}
+  if(a==="new-project"){
+    const id=uid(), used=list().map(x=>x.color);
+    projects[id]={id,name:"New project",about:"",color:COLORS.find(c=>!used.includes(c))||COLORS[list().length%COLORS.length],order:Date.now(),stages:[]};
+    flush(id); setView(id);
+    const n=document.getElementById("p-name"); if(n){n.focus();n.select();}
+    return;
+  }
+  if(a==="cancel"){ui.confirm=null;return render();}
+  if(a==="export") return exportBackup();
+  if(a==="view-photo") return openLB(b.dataset.ref);
+  if(!p) return;
+  if(a==="color"){p.color=b.dataset.c;scheduleSave(p.id,0);return render();}
+  if(a==="toggle-stage"){const s=stage(p,b.dataset.s);s.done=b.checked;touch(s);scheduleSave(p.id,0);return render();}
+  if(a==="toggle-step"){const s=stage(p,b.dataset.s),t=s.steps.find(x=>x.id===b.dataset.t);t.done=b.checked;touch(s);
+    if(s.steps.length&&s.steps.every(x=>x.done)) s.done=true; else if(!t.done) s.done=false;
+    scheduleSave(p.id,300);return render();}
+  if(a==="add-photo"){if(photoBusy) return; photoTarget={p:p.id,s:b.dataset.s,t:b.dataset.t}; photoInput.click(); return;}
+  if(a==="del-photo"){ui.confirm="photo:"+b.dataset.t+"|"+b.dataset.ref; return render();}
+  if(a==="del-photo-yes"){const s=stage(p,b.dataset.s), t=s&&(s.steps||[]).find(x=>x.id===b.dataset.t), ref=b.dataset.ref; ui.confirm=null;
+    if(t){t.images=(t.images||[]).filter(x=>x!==ref); if(!t.images.length) delete t.images; touch(s); scheduleSave(p.id,0);
+      if(ref.startsWith("idb:")&&!photoUses(ref)){const id=ref.slice(4); delPhoto(id).catch(()=>{}); if(photoUrls[id]){URL.revokeObjectURL(photoUrls[id]); delete photoUrls[id];}}}
+    return render();}
+  if(a==="del-step"){const s=stage(p,b.dataset.s);s.steps=s.steps.filter(x=>x.id!==b.dataset.t);touch(s);scheduleSave(p.id,0);return render();}
+  if(a==="del-stage"){ui.confirm="stage:"+b.dataset.s;return render();}
+  if(a==="del-stage-yes"){p.stages=p.stages.filter(s=>s.id!==b.dataset.s);ui.confirm=null;scheduleSave(p.id,0);return render();}
+  if(a==="add-stage") return addStage(p);
+  if(a==="del-project"){ui.confirm="project";return render();}
+  if(a==="del-project-yes"){const id=p.id;delete projects[id];
+    persist();
+    return setView("home");}
+});
+function addStage(p){
+  const t=document.getElementById("ns-title"), d=document.getElementById("ns-due");
+  const title=t.value.trim(); if(!title){t.focus();return;}
+  const sid=uid(); p.stages=p.stages||[]; p.stages.push({id:sid,title,due:d.value||"",done:false,steps:[]});
+  scheduleSave(p.id,0); render();
+  const f=document.getElementById("as-"+sid); if(f) f.focus();
+}
+const AUTO=!(window.CSS&&CSS.supports&&CSS.supports("field-sizing","content"));
+function fit(el){if(AUTO){el.style.height="auto";el.style.height=el.scrollHeight+"px";}}
+function fitAll(){if(AUTO) app.querySelectorAll("textarea.wrap").forEach(fit);}
+window.addEventListener("resize",fitAll);
+app.addEventListener("input",e=>{
+  const el=e.target, f=el.dataset.f, p=cur(); if(!f||!p) return;
+  if(el.classList.contains("wrap")){ if(/\n/.test(el.value)){const pos=el.selectionStart;el.value=el.value.replace(/\n+/g," ");try{el.setSelectionRange(pos,pos);}catch(_){}} fit(el); }
+  if(f==="name") p.name=el.value;
+  else if(f==="about") p.about=el.value;
+  else {const s=stage(p,el.dataset.s); if(!s) return; touch(s);
+    if(f==="stage-title") s.title=el.value;
+    else if(f==="stage-due") s.due=el.value;
+    else if(f==="step"){const t=s.steps.find(x=>x.id===el.dataset.t); if(t) t.text=el.value;}}
+  scheduleSave(p.id);
+});
+app.addEventListener("change",e=>{ if(e.target.dataset.f==="stage-due") render(); });
+function addStep(p,el){
+  const v=el.value.trim(); if(!v){el.focus();return;}
+  const s=stage(p,el.dataset.s); if(!s) return; s.steps=s.steps||[]; s.steps.push({id:uid(),text:v,done:false}); s.done=false; touch(s);
+  el.value=""; scheduleSave(p.id,300); render(); const f=document.getElementById("as-"+s.id); if(f) f.focus();
+}
+// Phones submit the form from the keyboard's Enter key; desktop Enter goes through keydown.
+app.addEventListener("submit",e=>{
+  e.preventDefault(); const p=cur(); if(!p) return;
+  if(e.target.id==="ns-form") addStage(p);
+  else if(e.target.classList.contains("step-form")) addStep(p,e.target.querySelector(".add-step"));
+});
+app.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||e.isComposing) return;
+  const el=e.target, p=cur(); if(!p) return;
+  if(el.classList.contains("add-step")){e.preventDefault();addStep(p,el);}
+  else if(el.id==="ns-title"){e.preventDefault();addStage(p);}
+  else if((el.tagName==="INPUT"&&el.type!=="checkbox"&&el.type!=="date")||el.classList.contains("wrap")){e.preventDefault();el.blur();}
+});
+
+/* ---------- data ---------- */
+const SEED={"bretonnia": {"about": "", "color": "blue", "name": "Old World Bretonnia painting", "order": 4, "stages": [{"done": false, "due": "2026-12-31", "example": false, "id": "br1", "steps": [{"done": true, "id": "h6y9j1gj", "text": "Heraldry: all 22 designs below; first pick is 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 15, 17"}, {"done": false, "id": "pvvi9xpo", "text": "Prime riders: WHITE 1, 3, 5, 7, 8, 9, 12, 13, 14, 15, 16, 20, 21, 22; GREY 2, 4, 6, 10, 11, 17, 18, 19"}, {"done": false, "id": "kp4metl1", "text": "Metallics first"}, {"done": false, "id": "rdhrld01", "text": "Heraldry: see the 12 knight heraldry stages"}, {"done": false, "id": "py1b88pr", "text": "Paint bodies"}, {"done": false, "id": "rdlethr1", "text": "Leather last: Gnarlwood 3, shade 1, edge 4"}], "title": "12 Knights of the Realm (riders)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh01", "steps": [{"done": false, "id": "kh01s01", "text": "Pencil a vertical centre line; right half Or first, then left half Azure"}, {"done": false, "id": "kh01s02", "text": "Whole fleur-de-lis Megaboss Yellow 3, then repaint its right half Ultramar Blue 2"}, {"done": false, "id": "kh01s03", "text": "Highlight both halves; outline the blue half of the fleur with Ultramar Blue 1 if it gets lost"}, {"done": false, "id": "kh01s04", "text": "Surcoat and pennant: halved blue and yellow"}, {"done": false, "id": "kh01s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 1: Per pale Azure and Or, a fleur-de-lis counterchanged (Duke's arms)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh02", "steps": [{"done": false, "id": "kh02s01", "text": "Whole shield Gules (Bloodtoof Red 3, shade 1, highlight 4-5)"}, {"done": false, "id": "kh02s02", "text": "Tape diagonal band top-left to bottom-right; Blackstone Void 5 undercoat, then Or (Megaboss Yellow 3)"}, {"done": false, "id": "kh02s03", "text": "Two fleurs-de-lis Blackstone Void 5, Dataslate Grey 3 line where petals meet"}, {"done": false, "id": "kh02s04", "text": "Surcoat and pennant: red with yellow diagonal sash"}, {"done": false, "id": "kh02s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 2: Gules, a bend Or between two fleurs-de-lis Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh03", "steps": [{"done": false, "id": "kh03s01", "text": "Pencil a cross; white quarters (top-right, bottom-left) Blackstone Void 5 first"}, {"done": false, "id": "kh03s02", "text": "Black quarters Blackstone Void 1, highlight Craventhrone Cloak 3-4"}, {"done": false, "id": "kh03s03", "text": "Lion silhouette top-left: white undercoat, Megaboss Yellow 3, outline Hawkshroud Yellow 1"}, {"done": false, "id": "kh03s04", "text": "Surcoat and pennant: quartered black and white (no lion)"}, {"done": false, "id": "kh03s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 3: Quarterly Sable and Argent, a lion rampant Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh04", "steps": [{"done": false, "id": "kh04s01", "text": "Whole shield Vert (Lustria Green 3, shade 1-2, highlight 4-5)"}, {"done": false, "id": "kh04s02", "text": "Tape chevron, point a third down; paint Argent (Blackstone Void 5, shade Dataslate Grey 3)"}, {"done": false, "id": "kh04s03", "text": "Three stars: white dot, then five Megaboss Yellow 3 strokes"}, {"done": false, "id": "kh04s04", "text": "Surcoat: green with white chevron; pennant: green with yellow star"}, {"done": false, "id": "kh04s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 4: Vert, a chevron Argent between three mullets Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh05", "steps": [{"done": false, "id": "kh05s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh05s02", "text": "Top third Gules for the chief"}, {"done": false, "id": "kh05s03", "text": "Tape three blue bars below (Ultramar Blue 2), white directly under the chief"}, {"done": false, "id": "kh05s04", "text": "Three small fleurs-de-lis Or on the chief"}, {"done": false, "id": "kh05s05", "text": "Surcoat: blue/white stripes or halves; pennant: red with one yellow fleur"}, {"done": false, "id": "kh05s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 5: Barry Argent and Azure, on a chief Gules three fleurs Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh06", "steps": [{"done": false, "id": "kh06s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh06s02", "text": "Purple field (the range's purple, tone 2; shade 1, highlight 3-4), leaving a 1.5-2mm white border"}, {"done": false, "id": "kh06s03", "text": "Dot small purple semicircles into the border's inner edge for the scallops (plain border is fine)"}, {"done": false, "id": "kh06s04", "text": "Yellow X over the field, stopping at the border"}, {"done": false, "id": "kh06s05", "text": "Surcoat: purple with yellow X; pennant: purple with white edge"}, {"done": false, "id": "kh06s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 6: Purpure, a saltire Or, a bordure engrailed Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh07", "steps": [{"done": false, "id": "kh07s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh07s02", "text": "1.5-2mm blue border (Ultramar Blue 2)"}, {"done": false, "id": "kh07s03", "text": "Tape and paint red cross, arms stopping at the border"}, {"done": false, "id": "kh07s04", "text": "Surcoat: white, red cross, blue hem; pennant: white with red cross"}, {"done": false, "id": "kh07s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 7: Argent, a cross Gules, a bordure Azure"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh08", "steps": [{"done": false, "id": "kh08s01", "text": "Pencil chevron line, point at centre; lower part Or first, then top Sable"}, {"done": false, "id": "kh08s02", "text": "Two yellow roundels on the black (white undercoat, then Or)"}, {"done": false, "id": "kh08s03", "text": "One black roundel on the yellow"}, {"done": false, "id": "kh08s04", "text": "Surcoat and pennant: black over yellow at a chevron line"}, {"done": false, "id": "kh08s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 8: Per chevron Sable and Or, three roundels counterchanged"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh09", "steps": [{"done": false, "id": "kh09s01", "text": "Whole shield Or"}, {"done": false, "id": "kh09s02", "text": "Pencil a 5x6 grid; alternate squares Ultramar Blue 2"}, {"done": false, "id": "kh09s03", "text": "Top-left four squares red for the canton"}, {"done": false, "id": "kh09s04", "text": "Edge highlight rim and canton only"}, {"done": false, "id": "kh09s05", "text": "Surcoat: blue/yellow quarters, chequy hem; pennant: blue/yellow halves"}, {"done": false, "id": "kh09s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 9: Chequy Or and Azure, a canton Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh10", "steps": [{"done": false, "id": "kh10s01", "text": "Whole shield Azure (Ultramar Blue 2, shade 1, highlight 3-5)"}, {"done": false, "id": "kh10s02", "text": "Pencil a Y from the top corners; white undercoat, then Or"}, {"done": false, "id": "kh10s03", "text": "Surcoat: blue with yellow Y; pennant: blue with yellow stripe"}, {"done": false, "id": "kh10s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 10: Azure, a pall Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh11", "steps": [{"done": false, "id": "kh11s01", "text": "Wedge (pile) first in Or, top edge to near the point"}, {"done": false, "id": "kh11s02", "text": "Rest of shield Sable, highlight Craventhrone Cloak 3-4"}, {"done": false, "id": "kh11s03", "text": "Black star near the top of the wedge"}, {"done": false, "id": "kh11s04", "text": "Surcoat: black with yellow wedge; pennant: yellow point on black"}, {"done": false, "id": "kh11s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 11: Sable, on a pile Or a mullet Sable"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh12", "steps": [{"done": false, "id": "kh12s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh12s02", "text": "Pencil four lines through a point just above centre: vertical, horizontal, both diagonals"}, {"done": false, "id": "kh12s03", "text": "Fill alternate wedges Vert (Lustria Green 3)"}, {"done": false, "id": "kh12s04", "text": "Surcoat: white and green quarters; pennant: white and green halves"}, {"done": false, "id": "kh12s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 12: Gyronny of eight Argent and Vert"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh13", "steps": [{"done": false, "id": "kh13s01", "text": "Whole shield Or"}, {"done": false, "id": "kh13s02", "text": "Tape a horizontal band, a quarter of the height; paint Azure"}, {"done": false, "id": "kh13s03", "text": "Three red roundels: two above the band, one below"}, {"done": false, "id": "kh13s04", "text": "Surcoat: yellow with blue chest band; pennant: yellow with blue stripe"}, {"done": false, "id": "kh13s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 13: Or, a fess Azure between three torteaux"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh14", "steps": [{"done": false, "id": "kh14s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh14s02", "text": "Pencil a diagonal grid both ways (tape helps on flat shields)"}, {"done": false, "id": "kh14s03", "text": "Fill alternate diamonds Gules (Bloodtoof Red 3)"}, {"done": false, "id": "kh14s04", "text": "Surcoat: red with a band of diamonds on the hem; pennant: red and white halves"}, {"done": false, "id": "kh14s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 14: Lozengy Argent and Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh15", "steps": [{"done": false, "id": "kh15s01", "text": "Pencil an X corner to corner"}, {"done": false, "id": "kh15s02", "text": "Left and right triangles Argent first, then top and bottom Azure"}, {"done": false, "id": "kh15s03", "text": "Surcoat: blue with white side panels; pennant: blue/white halves"}, {"done": false, "id": "kh15s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 15: Per saltire Azure and Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh16", "steps": [{"done": false, "id": "kh16s01", "text": "Whole shield Or"}, {"done": false, "id": "kh16s02", "text": "Tape six equal vertical stripes; paint the 2nd, 4th and 6th Gules"}, {"done": false, "id": "kh16s03", "text": "Surcoat and pennant: vertical red and yellow stripes"}, {"done": false, "id": "kh16s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 16: Paly of six Or and Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh17", "steps": [{"done": false, "id": "kh17s01", "text": "Whole shield Azure"}, {"done": false, "id": "kh17s02", "text": "Tape diagonal band top-right to bottom-left; paint Argent"}, {"done": false, "id": "kh17s03", "text": "Yellow stars top-left and bottom-right, over white dots"}, {"done": false, "id": "kh17s04", "text": "Surcoat: blue with white sash; pennant: blue with white stripe"}, {"done": false, "id": "kh17s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 17: Azure, a bend sinister Argent between two mullets Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh18", "steps": [{"done": false, "id": "kh18s01", "text": "Whole shield Gules"}, {"done": false, "id": "kh18s02", "text": "Top third Or for the chief (Blackstone Void 5 undercoat first)"}, {"done": false, "id": "kh18s03", "text": "Three white rings, two side by side and one below: white dot, then smaller red dot in the centre"}, {"done": false, "id": "kh18s04", "text": "Surcoat: red with yellow yoke across the shoulders; pennant: yellow over red"}, {"done": false, "id": "kh18s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 18: Gules, a chief Or, three annulets Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh19", "steps": [{"done": false, "id": "kh19s01", "text": "Whole shield Vert"}, {"done": false, "id": "kh19s02", "text": "Pencil two parallel wavy lines across the middle; fill between them Argent"}, {"done": false, "id": "kh19s03", "text": "Optional: fine Ultramar Blue 4 lines inside the band (Lady of the Lake nod)"}, {"done": false, "id": "kh19s04", "text": "Surcoat: green with wavy white band; pennant: green with white wave"}, {"done": false, "id": "kh19s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 19: Vert, a fess wavy Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh20", "steps": [{"done": false, "id": "kh20s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh20s02", "text": "Tape six diagonal stripes top-left to bottom-right; paint alternate stripes Purpure"}, {"done": false, "id": "kh20s03", "text": "Surcoat: purple with one white sash or full stripes; pennant: purple and white stripes"}, {"done": false, "id": "kh20s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 20: Bendy of six Argent and Purpure"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh21", "steps": [{"done": false, "id": "kh21s01", "text": "Pencil a cross; top-right and bottom-left Or first, then the other two Gules"}, {"done": false, "id": "kh21s02", "text": "1.5-2mm black border last, highlighted Craventhrone Cloak 3"}, {"done": false, "id": "kh21s03", "text": "Surcoat: red and yellow quarters with black hem; pennant: red and yellow halves"}, {"done": false, "id": "kh21s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 21: Quarterly Gules and Or, a bordure Sable"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh22", "steps": [{"done": false, "id": "kh22s01", "text": "Whole shield Or"}, {"done": false, "id": "kh22s02", "text": "Mark three thin evenly spaced chevrons, points stacked down the centre (1-2mm tape)"}, {"done": false, "id": "kh22s03", "text": "Paint chevrons Gules, edge highlight Bloodtoof Red 4"}, {"done": false, "id": "kh22s04", "text": "Surcoat: yellow with three red chevrons; pennant: yellow with one red chevron"}, {"done": false, "id": "kh22s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 22: Or, three chevronels Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb1black", "steps": [{"done": false, "id": "hb1s01", "text": "Prime black"}, {"done": false, "id": "hb1s02", "text": "Base Blackstone Void 1"}, {"done": false, "id": "hb1s03", "text": "Layer Dataslate Grey 1 on muscle tops"}, {"done": false, "id": "hb1s04", "text": "Glaze Stormwolf Blue 1 + Shading Medium"}, {"done": false, "id": "hb1s05", "text": "Highlight Dataslate Grey 2"}, {"done": false, "id": "hb1s06", "text": "Glint Stormwolf Blue 2 on highest points"}, {"done": false, "id": "hb1s07", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Black x2"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb2dbay", "steps": [{"done": false, "id": "hb2s01", "text": "Prime black"}, {"done": false, "id": "hb2s02", "text": "Base body Carthalos Skin 2; points Blackstone Void 1"}, {"done": false, "id": "hb2s03", "text": "Shade Carthalos Skin 1 + Shading Medium"}, {"done": false, "id": "hb2s04", "text": "Layer Carthalos Skin 3"}, {"done": false, "id": "hb2s05", "text": "Highlight Carthalos Skin 4 (stop there)"}, {"done": false, "id": "hb2s06", "text": "Points: Dataslate Grey 1, then 2 on edges"}, {"done": false, "id": "hb2s07", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Dark bay x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb3bay", "steps": [{"done": false, "id": "hb3s01", "text": "Prime grey"}, {"done": false, "id": "hb3s02", "text": "Base body Carthalos Skin 3; points Blackstone Void 1"}, {"done": false, "id": "hb3s03", "text": "Shade Carthalos Skin 1 + Shading Medium"}, {"done": false, "id": "hb3s04", "text": "Layer Carthalos Skin 4"}, {"done": false, "id": "hb3s05", "text": "Highlight Carthalos Skin 5"}, {"done": false, "id": "hb3s06", "text": "Optional glaze Khemri Sands 1 + Shading Medium"}, {"done": false, "id": "hb3s07", "text": "Points: Dataslate Grey 1, then 2 on edges"}, {"done": false, "id": "hb3s08", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Bay x3"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb4chest", "steps": [{"done": false, "id": "hb4s01", "text": "Prime grey"}, {"done": false, "id": "hb4s02", "text": "Base body Carthalos Skin 4; mane/tail Carthalos Skin 3"}, {"done": false, "id": "hb4s03", "text": "Shade Carthalos Skin 2 + Shading Medium"}, {"done": false, "id": "hb4s04", "text": "Glaze Chotec Orange 1 + Shading Medium, 2-3 coats"}, {"done": false, "id": "hb4s05", "text": "Layer Ta'unar Ochre 1"}, {"done": false, "id": "hb4s06", "text": "Highlight Ta'unar Ochre 2"}, {"done": false, "id": "hb4s07", "text": "Mane/tail: Carthalos Skin 5, then Ta'unar Ochre 1 strands"}, {"done": false, "id": "hb4s08", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Chestnut x2"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb5grey", "steps": [{"done": false, "id": "hb5s01", "text": "Prime grey"}, {"done": false, "id": "hb5s02", "text": "Base body Dataslate Grey 4; mane/tail Dataslate Grey 3"}, {"done": false, "id": "hb5s03", "text": "Shade Dataslate Grey 2 + Shading Medium, heavier on head and legs"}, {"done": false, "id": "hb5s04", "text": "Layer Blackstone Void 4; mane Necrolith Bone 4"}, {"done": false, "id": "hb5s05", "text": "Highlight Blackstone Void 5; mane Necrolith Bone 5"}, {"done": false, "id": "hb5s06", "text": "Muzzle Dataslate Grey 1 + Celestine Skin 1 glaze"}, {"done": false, "id": "hb5s07", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Grey x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb6dapl", "steps": [{"done": false, "id": "hb6s01", "text": "Prime grey"}, {"done": false, "id": "hb6s02", "text": "Base body Dataslate Grey 4; mane/tail Dataslate Grey 3"}, {"done": false, "id": "hb6s03", "text": "Shade Dataslate Grey 2 + Shading Medium"}, {"done": false, "id": "hb6s04", "text": "Layer Blackstone Void 4; mane Necrolith Bone 4"}, {"done": false, "id": "hb6s05", "text": "Stipple dapple rings Blackstone Void 5 on rump and flanks"}, {"done": false, "id": "hb6s06", "text": "Light glaze Dataslate Grey 3 + Shading Medium between rings"}, {"done": false, "id": "hb6s07", "text": "Muzzle, hooves, eyes, nostrils"}], "title": "Knight horses: Dappled grey x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb7palo", "steps": [{"done": false, "id": "hb7s01", "text": "Prime white"}, {"done": false, "id": "hb7s02", "text": "Base body Khemri Sands 3; mane/tail Necrolith Bone 2"}, {"done": false, "id": "hb7s03", "text": "Shade Khemri Sands 1 + Shading Medium; mane Gnarlwood 3 + Shading Medium"}, {"done": false, "id": "hb7s04", "text": "Layer Khemri Sands 4; mane Necrolith Bone 4"}, {"done": false, "id": "hb7s05", "text": "Highlight Khemri Sands 5; mane Necrolith Bone 5, Blackstone Void 5 strands"}, {"done": false, "id": "hb7s06", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Palomino x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb8pieb", "steps": [{"done": false, "id": "hb8s01", "text": "Prime white"}, {"done": false, "id": "hb8s02", "text": "Paint whole horse as white coat (Dataslate Grey 4 to Blackstone Void 5)"}, {"done": false, "id": "hb8s03", "text": "Sketch patches with thinned Dataslate Grey 2"}, {"done": false, "id": "hb8s04", "text": "Fill patches with black recipe (Blackstone Void 1, Dataslate Grey 1-2)"}, {"done": false, "id": "hb8s05", "text": "Soften patch edges with Blackstone Void 4"}, {"done": false, "id": "hb8s06", "text": "Mane/tail, hooves, eyes, nostrils"}], "title": "Knight horses: Piebald x1"}, {"done": false, "due": "2026-12-29", "example": false, "id": "7cox5l6v", "steps": [{"done": false, "id": "vzao2q2w", "text": "Scheme: Per fess Azure and Or (blue top, gold bottom), gold fleur-de-lis on the blue half"}, {"done": false, "id": "pl2bann1", "text": "Banner carries the Duke's full arms (per pale Azure and Or, fleur counterchanged)"}, {"done": false, "id": "pl3trim1", "text": "Keep gold trim thinner than the Duke's; grey horse so he stands out"}, {"done": false, "id": "uilmw191", "text": "Prime rider grey, horse grey, banner white"}, {"done": false, "id": "pl4metl1", "text": "Metallics first: armour, helmet, sword, banner finial"}, {"done": false, "id": "jfpezlxa", "text": "Horse base: body Dataslate Grey 4, mane/tail Dataslate Grey 3"}, {"done": false, "id": "plh02", "text": "Horse shade: Dataslate Grey 2 + Shading Medium, heavier on head, legs, belly"}, {"done": false, "id": "plh03", "text": "Horse layer: Blackstone Void 4; mane Necrolith Bone 4"}, {"done": false, "id": "plh04", "text": "Horse highlight: Blackstone Void 5; mane Necrolith Bone 5"}, {"done": false, "id": "plh05", "text": "Horse muzzle Dataslate Grey 1 + Celestine Skin 1 glaze; hooves, eyes, nostrils"}, {"done": false, "id": "pl5shld1", "text": "Shield: pencil a horizontal centre line; bottom half Or first (Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5)"}, {"done": false, "id": "pls02", "text": "Shield: top half Azure (Ultramar Blue 2, shade 1, highlight 3-5)"}, {"done": false, "id": "pls03", "text": "Shield fleur on the blue: Blackstone Void 5 undercoat, Megaboss Yellow 3, highlight 4; outline Hawkshroud Yellow 1 if needed"}, {"done": false, "id": "plc01", "text": "Caparison: same split, blue over gold, gold fleur on the blue at the flank"}, {"done": false, "id": "plc02", "text": "Caparison trim: one thin Hawkshroud Yellow 3 line on the hem only"}, {"done": false, "id": "cp31c9v5", "text": "Surcoat: blue over gold halves; plume Blackstone Void 5, shade Dataslate Grey 3"}, {"done": false, "id": "pl6bann1", "text": "Banner field: pencil vertical centre line; right half Or first, then left half Azure"}, {"done": false, "id": "plb02", "text": "Banner fleur: whole fleur Megaboss Yellow 3, then repaint its right half Ultramar Blue 2; outline blue half Ultramar Blue 1"}, {"done": false, "id": "plb03", "text": "Banner folds: glaze recesses Ultramar Blue 1 / Hawkshroud Yellow 1 + Shading Medium"}, {"done": false, "id": "plb04", "text": "Banner highlights: raised folds Ultramar Blue 4 / Megaboss Yellow 5; dark side one tone higher"}, {"done": false, "id": "plb05", "text": "Banner fringe/tassels: Megaboss Yellow 3, shade Carthalos Skin 3 + Shading Medium"}, {"done": false, "id": "plb06", "text": "Banner pole: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4"}, {"done": false, "id": "pll01", "text": "Leather (reins, belts, straps): Gnarlwood 2-3, shade 1, edge 4"}, {"done": false, "id": "pll99", "text": "Edge highlights and tidy-up"}], "title": "Paladin BSB on horse (Duke's colours)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "3ff6tfdt", "steps": [{"done": false, "id": "dm1prim1", "text": "Prime rider grey, horse white (white palfrey)"}, {"done": false, "id": "dmm01", "text": "Metallics first: jewellery, circlet, staff fittings"}, {"done": false, "id": "xmper4zs", "text": "Horse base: body Blackstone Void 4, mane/tail Necrolith Bone 4"}, {"done": false, "id": "dmh02", "text": "Horse shade: Dataslate Grey 3 + Shading Medium, lighter than a grey; heavier on legs and head"}, {"done": false, "id": "dmh03", "text": "Horse highlight: Blackstone Void 5; mane Necrolith Bone 5"}, {"done": false, "id": "dmh04", "text": "Horse muzzle and eyes: Celestine Skin 1 glaze, Dataslate Grey 1 nostrils; pale hooves Necrolith Bone 1 to 3"}, {"done": false, "id": "dm2drss1", "text": "Dress base: Lustria Green 3"}, {"done": false, "id": "dmd02", "text": "Dress shade: Lustria Green 1 + Shading Medium into folds, Lustria Green 2 to soften"}, {"done": false, "id": "dmd03", "text": "Dress layer: Lustria Green 4 on raised folds (Blending Medium for smooth transitions)"}, {"done": false, "id": "dmd04", "text": "Dress highlight: Lustria Green 5 on the very tops of folds"}, {"done": false, "id": "dmd05", "text": "Green cloak/saddle cloth: Kasrkin Green 2, shade 1, highlight 3-4 (darker green to contrast the dress)"}, {"done": false, "id": "dmd06", "text": "Gold trim on hems and sleeves: Megaboss Yellow 3, shade Hawkshroud Yellow 1, edge Megaboss Yellow 5"}, {"done": false, "id": "dm3skin1", "text": "Skin: Celestine Skin 3, shade Carthalos Skin 5 + Shading Medium, highlight Celestine Skin 4 then 5"}, {"done": false, "id": "dms02", "text": "Lips and cheeks: thin glaze Eye of Terror 1 + Shading Medium"}, {"done": false, "id": "dms03", "text": "Eyes: Blackstone Void 5 whites, Blackstone Void 1 dot"}, {"done": false, "id": "dms04", "text": "Hair: Khemri Sands 3, shade Khemri Sands 1 + Shading Medium, highlight 4 then 5"}, {"done": false, "id": "dm4detl1", "text": "Staff: Gnarlwood 3, shade 1, highlight 4"}, {"done": false, "id": "dmx02", "text": "Grail or gem details: Seraphon Blue 3 to 5, white dot glint"}, {"done": false, "id": "dmx03", "text": "Reins and saddle leather: Gnarlwood 2, shade 1, edge 3"}, {"done": false, "id": "dmx99", "text": "Edge highlights and tidy-up"}], "title": "Damsel on horse (green)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "uhek3ago", "steps": [{"done": true, "id": "z3jx6kq5", "text": "Duke colours: per pale Azure and Or, fleur-de-lis counterchanged"}, {"done": false, "id": "ma1prim1", "text": "Prime grey (white zenithal from above helps the yellow)"}, {"done": false, "id": "ma2metl1", "text": "Metallics first: helmets, mail, polearm heads"}, {"done": false, "id": "mat01", "text": "Tabards: pencil a vertical centre line; Or half first (Megaboss Yellow 3)"}, {"done": false, "id": "mat02", "text": "Tabards: Azure half (Ultramar Blue 2)"}, {"done": false, "id": "mat03", "text": "Tabard shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into folds"}, {"done": false, "id": "mat04", "text": "Tabard highlight: Megaboss Yellow 4 / Ultramar Blue 3-4 on raised folds only (keep them scruffier than the knights)"}, {"done": false, "id": "jahxleth", "text": "Hose and sleeves: mix it up across the unit: Dataslate Grey 2-3, Gnarlwood 3, Necrolith Bone 2"}, {"done": false, "id": "mab02", "text": "Undershirts and padding: Necrolith Bone 2, shade Gnarlwood 3 + Shading Medium, highlight Necrolith Bone 4"}, {"done": false, "id": "mab03", "text": "Skin: Celestine Skin 3, shade Carthalos Skin 5 + Shading Medium, highlight Celestine Skin 4"}, {"done": false, "id": "mab04", "text": "Hair and beards: vary between Gnarlwood 2, Carthalos Skin 3 and Khemri Sands 2"}, {"done": false, "id": "mab05", "text": "Leather belts, boots, straps: Gnarlwood 2-3, shade 1, edge 4"}, {"done": false, "id": "mab06", "text": "Polearm hafts: Gnarlwood 3, shade 1, highlight 4"}, {"done": false, "id": "d60w8whw", "text": "Shields: pencil centre line; Or half first, then Azure half"}, {"done": false, "id": "mas02", "text": "Shield fleur: paint it whole Megaboss Yellow 3, then repaint its Or-side half Ultramar Blue 2"}, {"done": false, "id": "mas03", "text": "Shield highlights: rim edges only; blue side one tone higher"}, {"done": false, "id": "ma3bann1", "text": "Unit banner: the Duke's arms, same recipe as the Paladin's banner"}, {"done": false, "id": "mab07", "text": "Musician/champion: add a little extra gold trim so they read at a glance"}, {"done": false, "id": "mab08", "text": "Weathering: Gnarlwood 3 + Shading Medium glaze on tabard hems and boots"}, {"done": false, "id": "mab99", "text": "Edge highlights and tidy-up"}], "title": "10 Men at arms (Duke's colours)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "bas1stg1", "steps": [{"done": false, "id": "bs1schm1", "text": "Scheme: muddy Bretonnian field with static grass, same on every base"}, {"done": false, "id": "bsm01", "text": "Glue a pinch of fine sand and a few small stones first for extra texture (optional)"}, {"done": false, "id": "bs2text1", "text": "Apply mud texture paste with an old brush or sculpting tool; push it up around feet and hooves"}, {"done": false, "id": "bsm03", "text": "While wet, press hoof prints and ruts with a toothpick; drag a few ridges"}, {"done": false, "id": "bsm04", "text": "Let the texture dry fully (several hours or overnight) before painting"}, {"done": false, "id": "bs3pnt01", "text": "Basecoat Gnarlwood 2 (skip if your texture paste is already mud-coloured)"}, {"done": false, "id": "bsm06", "text": "Shade Gnarlwood 1 + Shading Medium into ruts and around feet"}, {"done": false, "id": "bsm07", "text": "Drybrush Gnarlwood 3, then a lighter pass of Gnarlwood 4 (Tone Pro drybrush)"}, {"done": false, "id": "bsm08", "text": "Very light drybrush Necrolith Bone 2 on the highest ridges only"}, {"done": false, "id": "bsm09", "text": "Rocks: Dataslate Grey 2, drybrush Dataslate Grey 4"}, {"done": false, "id": "bsm10", "text": "Mud splash on horse legs, hems and boots: stipple Gnarlwood 2, then Gnarlwood 3 on the edges"}, {"done": false, "id": "bsm11", "text": "Wet mud: gloss varnish in the deepest ruts and hoof prints"}, {"done": false, "id": "bs4tuft1", "text": "Static grass: dab PVA in patches, leaving the muddy ruts bare"}, {"done": false, "id": "bsm13", "text": "Apply 2-4mm static grass with a puffer or applicator; leave to dry, then tap and blow off excess"}, {"done": false, "id": "bsm14", "text": "A few tufts or flowers sparingly, mostly at base edges"}, {"done": false, "id": "bs5rim01", "text": "Base rims: Gnarlwood 1 (or Blackstone Void 1), two thin coats"}, {"done": false, "id": "bsm16", "text": "Matt varnish the model, avoiding the gloss mud"}], "title": "Basing (mud and static grass)"}]}, "guitar-hero": {"about": "", "color": "plum", "name": "Guitar Hero series", "order": 3, "stages": [{"done": false, "due": "2027-10-28", "id": "6kpiw5x7", "steps": [], "title": "Release final video"}]}, "hobbywitholi": {"about": "", "color": "gold", "name": "Hobby With Oli channel", "order": 2, "stages": []}, "rpg-podcast": {"about": "", "color": "red", "name": "Rocket Propelled Goblins Podcast", "order": 1, "stages": [{"done": false, "due": "", "id": "capscl5a", "steps": [], "title": "Record next episodes"}]}};
+function load(){
+  let raw=null; try{raw=localStorage.getItem(KEY);}catch(e){}
+  if(raw){try{projects=JSON.parse(raw)||{};}catch(e){projects={};}}
+  else{projects={};Object.entries(SEED).forEach(([id,p])=>projects[id]=Object.assign({id},clone(p)));persist();}
+  Object.entries(projects).forEach(([id,p])=>{p.id=id;p.stages=p.stages||[];});
+  ready=true;
+  migrateBretonnia();
+  migrateBasing();
+  migrateKnights();
+  migrateKnightDetail();
+  migrateBlazons();
+  migrateMenAtArms1107();
+  try{if(!localStorage.getItem("workbench-mig-units-2026-11-06")){
+    if(projects.bretonnia&&!projects.bretonnia.unitLabel){projects.bretonnia.unitLabel="units";persist();}
+    localStorage.setItem("workbench-mig-units-2026-11-06","1");}}catch(e){}
+}
+const BRET_UPDATE={"about": "", "color": "blue", "name": "Old World Bretonnia painting", "order": 4, "stages": [{"done": false, "due": "2026-12-31", "example": false, "id": "br1", "steps": [{"done": true, "id": "h6y9j1gj", "text": "Heraldry: all 22 designs below; first pick is 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 15, 17"}, {"done": false, "id": "pvvi9xpo", "text": "Prime riders: WHITE 1, 3, 5, 7, 8, 9, 12, 13, 14, 15, 16, 20, 21, 22; GREY 2, 4, 6, 10, 11, 17, 18, 19"}, {"done": false, "id": "kp4metl1", "text": "Metallics first"}, {"done": false, "id": "rdhrld01", "text": "Heraldry: see the 12 knight heraldry stages"}, {"done": false, "id": "py1b88pr", "text": "Paint bodies"}, {"done": false, "id": "rdlethr1", "text": "Leather last: Gnarlwood 3, shade 1, edge 4"}], "title": "12 Knights of the Realm (riders)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh01", "steps": [{"done": false, "id": "kh01s01", "text": "Pencil a vertical centre line; right half Or first, then left half Azure"}, {"done": false, "id": "kh01s02", "text": "Whole fleur-de-lis Megaboss Yellow 3, then repaint its right half Ultramar Blue 2"}, {"done": false, "id": "kh01s03", "text": "Highlight both halves; outline the blue half of the fleur with Ultramar Blue 1 if it gets lost"}, {"done": false, "id": "kh01s04", "text": "Surcoat and pennant: halved blue and yellow"}, {"done": false, "id": "kh01s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 1: Per pale Azure and Or, a fleur-de-lis counterchanged (Duke's arms)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh02", "steps": [{"done": false, "id": "kh02s01", "text": "Whole shield Gules (Bloodtoof Red 3, shade 1, highlight 4-5)"}, {"done": false, "id": "kh02s02", "text": "Tape diagonal band top-left to bottom-right; Blackstone Void 5 undercoat, then Or (Megaboss Yellow 3)"}, {"done": false, "id": "kh02s03", "text": "Two fleurs-de-lis Blackstone Void 5, Dataslate Grey 3 line where petals meet"}, {"done": false, "id": "kh02s04", "text": "Surcoat and pennant: red with yellow diagonal sash"}, {"done": false, "id": "kh02s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 2: Gules, a bend Or between two fleurs-de-lis Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh03", "steps": [{"done": false, "id": "kh03s01", "text": "Pencil a cross; white quarters (top-right, bottom-left) Blackstone Void 5 first"}, {"done": false, "id": "kh03s02", "text": "Black quarters Blackstone Void 1, highlight Craventhrone Cloak 3-4"}, {"done": false, "id": "kh03s03", "text": "Lion silhouette top-left: white undercoat, Megaboss Yellow 3, outline Hawkshroud Yellow 1"}, {"done": false, "id": "kh03s04", "text": "Surcoat and pennant: quartered black and white (no lion)"}, {"done": false, "id": "kh03s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 3: Quarterly Sable and Argent, a lion rampant Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh04", "steps": [{"done": false, "id": "kh04s01", "text": "Whole shield Vert (Lustria Green 3, shade 1-2, highlight 4-5)"}, {"done": false, "id": "kh04s02", "text": "Tape chevron, point a third down; paint Argent (Blackstone Void 5, shade Dataslate Grey 3)"}, {"done": false, "id": "kh04s03", "text": "Three stars: white dot, then five Megaboss Yellow 3 strokes"}, {"done": false, "id": "kh04s04", "text": "Surcoat: green with white chevron; pennant: green with yellow star"}, {"done": false, "id": "kh04s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 4: Vert, a chevron Argent between three mullets Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh05", "steps": [{"done": false, "id": "kh05s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh05s02", "text": "Top third Gules for the chief"}, {"done": false, "id": "kh05s03", "text": "Tape three blue bars below (Ultramar Blue 2), white directly under the chief"}, {"done": false, "id": "kh05s04", "text": "Three small fleurs-de-lis Or on the chief"}, {"done": false, "id": "kh05s05", "text": "Surcoat: blue/white stripes or halves; pennant: red with one yellow fleur"}, {"done": false, "id": "kh05s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 5: Barry Argent and Azure, on a chief Gules three fleurs Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh06", "steps": [{"done": false, "id": "kh06s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh06s02", "text": "Purple field (the range's purple, tone 2; shade 1, highlight 3-4), leaving a 1.5-2mm white border"}, {"done": false, "id": "kh06s03", "text": "Dot small purple semicircles into the border's inner edge for the scallops (plain border is fine)"}, {"done": false, "id": "kh06s04", "text": "Yellow X over the field, stopping at the border"}, {"done": false, "id": "kh06s05", "text": "Surcoat: purple with yellow X; pennant: purple with white edge"}, {"done": false, "id": "kh06s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 6: Purpure, a saltire Or, a bordure engrailed Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh07", "steps": [{"done": false, "id": "kh07s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh07s02", "text": "1.5-2mm blue border (Ultramar Blue 2)"}, {"done": false, "id": "kh07s03", "text": "Tape and paint red cross, arms stopping at the border"}, {"done": false, "id": "kh07s04", "text": "Surcoat: white, red cross, blue hem; pennant: white with red cross"}, {"done": false, "id": "kh07s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 7: Argent, a cross Gules, a bordure Azure"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh08", "steps": [{"done": false, "id": "kh08s01", "text": "Pencil chevron line, point at centre; lower part Or first, then top Sable"}, {"done": false, "id": "kh08s02", "text": "Two yellow roundels on the black (white undercoat, then Or)"}, {"done": false, "id": "kh08s03", "text": "One black roundel on the yellow"}, {"done": false, "id": "kh08s04", "text": "Surcoat and pennant: black over yellow at a chevron line"}, {"done": false, "id": "kh08s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 8: Per chevron Sable and Or, three roundels counterchanged"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh09", "steps": [{"done": false, "id": "kh09s01", "text": "Whole shield Or"}, {"done": false, "id": "kh09s02", "text": "Pencil a 5x6 grid; alternate squares Ultramar Blue 2"}, {"done": false, "id": "kh09s03", "text": "Top-left four squares red for the canton"}, {"done": false, "id": "kh09s04", "text": "Edge highlight rim and canton only"}, {"done": false, "id": "kh09s05", "text": "Surcoat: blue/yellow quarters, chequy hem; pennant: blue/yellow halves"}, {"done": false, "id": "kh09s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 9: Chequy Or and Azure, a canton Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh10", "steps": [{"done": false, "id": "kh10s01", "text": "Whole shield Azure (Ultramar Blue 2, shade 1, highlight 3-5)"}, {"done": false, "id": "kh10s02", "text": "Pencil a Y from the top corners; white undercoat, then Or"}, {"done": false, "id": "kh10s03", "text": "Surcoat: blue with yellow Y; pennant: blue with yellow stripe"}, {"done": false, "id": "kh10s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 10: Azure, a pall Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh11", "steps": [{"done": false, "id": "kh11s01", "text": "Wedge (pile) first in Or, top edge to near the point"}, {"done": false, "id": "kh11s02", "text": "Rest of shield Sable, highlight Craventhrone Cloak 3-4"}, {"done": false, "id": "kh11s03", "text": "Black star near the top of the wedge"}, {"done": false, "id": "kh11s04", "text": "Surcoat: black with yellow wedge; pennant: yellow point on black"}, {"done": false, "id": "kh11s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 11: Sable, on a pile Or a mullet Sable"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh12", "steps": [{"done": false, "id": "kh12s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh12s02", "text": "Pencil four lines through a point just above centre: vertical, horizontal, both diagonals"}, {"done": false, "id": "kh12s03", "text": "Fill alternate wedges Vert (Lustria Green 3)"}, {"done": false, "id": "kh12s04", "text": "Surcoat: white and green quarters; pennant: white and green halves"}, {"done": false, "id": "kh12s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 12: Gyronny of eight Argent and Vert"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh13", "steps": [{"done": false, "id": "kh13s01", "text": "Whole shield Or"}, {"done": false, "id": "kh13s02", "text": "Tape a horizontal band, a quarter of the height; paint Azure"}, {"done": false, "id": "kh13s03", "text": "Three red roundels: two above the band, one below"}, {"done": false, "id": "kh13s04", "text": "Surcoat: yellow with blue chest band; pennant: yellow with blue stripe"}, {"done": false, "id": "kh13s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 13: Or, a fess Azure between three torteaux"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh14", "steps": [{"done": false, "id": "kh14s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh14s02", "text": "Pencil a diagonal grid both ways (tape helps on flat shields)"}, {"done": false, "id": "kh14s03", "text": "Fill alternate diamonds Gules (Bloodtoof Red 3)"}, {"done": false, "id": "kh14s04", "text": "Surcoat: red with a band of diamonds on the hem; pennant: red and white halves"}, {"done": false, "id": "kh14s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 14: Lozengy Argent and Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh15", "steps": [{"done": false, "id": "kh15s01", "text": "Pencil an X corner to corner"}, {"done": false, "id": "kh15s02", "text": "Left and right triangles Argent first, then top and bottom Azure"}, {"done": false, "id": "kh15s03", "text": "Surcoat: blue with white side panels; pennant: blue/white halves"}, {"done": false, "id": "kh15s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 15: Per saltire Azure and Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh16", "steps": [{"done": false, "id": "kh16s01", "text": "Whole shield Or"}, {"done": false, "id": "kh16s02", "text": "Tape six equal vertical stripes; paint the 2nd, 4th and 6th Gules"}, {"done": false, "id": "kh16s03", "text": "Surcoat and pennant: vertical red and yellow stripes"}, {"done": false, "id": "kh16s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 16: Paly of six Or and Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh17", "steps": [{"done": false, "id": "kh17s01", "text": "Whole shield Azure"}, {"done": false, "id": "kh17s02", "text": "Tape diagonal band top-right to bottom-left; paint Argent"}, {"done": false, "id": "kh17s03", "text": "Yellow stars top-left and bottom-right, over white dots"}, {"done": false, "id": "kh17s04", "text": "Surcoat: blue with white sash; pennant: blue with white stripe"}, {"done": false, "id": "kh17s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 17: Azure, a bend sinister Argent between two mullets Or"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh18", "steps": [{"done": false, "id": "kh18s01", "text": "Whole shield Gules"}, {"done": false, "id": "kh18s02", "text": "Top third Or for the chief (Blackstone Void 5 undercoat first)"}, {"done": false, "id": "kh18s03", "text": "Three white rings, two side by side and one below: white dot, then smaller red dot in the centre"}, {"done": false, "id": "kh18s04", "text": "Surcoat: red with yellow yoke across the shoulders; pennant: yellow over red"}, {"done": false, "id": "kh18s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 18: Gules, a chief Or, three annulets Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh19", "steps": [{"done": false, "id": "kh19s01", "text": "Whole shield Vert"}, {"done": false, "id": "kh19s02", "text": "Pencil two parallel wavy lines across the middle; fill between them Argent"}, {"done": false, "id": "kh19s03", "text": "Optional: fine Ultramar Blue 4 lines inside the band (Lady of the Lake nod)"}, {"done": false, "id": "kh19s04", "text": "Surcoat: green with wavy white band; pennant: green with white wave"}, {"done": false, "id": "kh19s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 19: Vert, a fess wavy Argent"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh20", "steps": [{"done": false, "id": "kh20s01", "text": "Whole shield Blackstone Void 5"}, {"done": false, "id": "kh20s02", "text": "Tape six diagonal stripes top-left to bottom-right; paint alternate stripes Purpure"}, {"done": false, "id": "kh20s03", "text": "Surcoat: purple with one white sash or full stripes; pennant: purple and white stripes"}, {"done": false, "id": "kh20s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 20: Bendy of six Argent and Purpure"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh21", "steps": [{"done": false, "id": "kh21s01", "text": "Pencil a cross; top-right and bottom-left Or first, then the other two Gules"}, {"done": false, "id": "kh21s02", "text": "1.5-2mm black border last, highlighted Craventhrone Cloak 3"}, {"done": false, "id": "kh21s03", "text": "Surcoat: red and yellow quarters with black hem; pennant: red and yellow halves"}, {"done": false, "id": "kh21s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 21: Quarterly Gules and Or, a bordure Sable"}, {"done": false, "due": "2026-12-31", "example": false, "id": "kh22", "steps": [{"done": false, "id": "kh22s01", "text": "Whole shield Or"}, {"done": false, "id": "kh22s02", "text": "Mark three thin evenly spaced chevrons, points stacked down the centre (1-2mm tape)"}, {"done": false, "id": "kh22s03", "text": "Paint chevrons Gules, edge highlight Bloodtoof Red 4"}, {"done": false, "id": "kh22s04", "text": "Surcoat: yellow with three red chevrons; pennant: yellow with one red chevron"}, {"done": false, "id": "kh22s99", "text": "Edge highlights and tidy-up"}], "title": "Knight 22: Or, three chevronels Gules"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb1black", "steps": [{"done": false, "id": "hb1s01", "text": "Prime black"}, {"done": false, "id": "hb1s02", "text": "Base Blackstone Void 1"}, {"done": false, "id": "hb1s03", "text": "Layer Dataslate Grey 1 on muscle tops"}, {"done": false, "id": "hb1s04", "text": "Glaze Stormwolf Blue 1 + Shading Medium"}, {"done": false, "id": "hb1s05", "text": "Highlight Dataslate Grey 2"}, {"done": false, "id": "hb1s06", "text": "Glint Stormwolf Blue 2 on highest points"}, {"done": false, "id": "hb1s07", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Black x2"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb2dbay", "steps": [{"done": false, "id": "hb2s01", "text": "Prime black"}, {"done": false, "id": "hb2s02", "text": "Base body Carthalos Skin 2; points Blackstone Void 1"}, {"done": false, "id": "hb2s03", "text": "Shade Carthalos Skin 1 + Shading Medium"}, {"done": false, "id": "hb2s04", "text": "Layer Carthalos Skin 3"}, {"done": false, "id": "hb2s05", "text": "Highlight Carthalos Skin 4 (stop there)"}, {"done": false, "id": "hb2s06", "text": "Points: Dataslate Grey 1, then 2 on edges"}, {"done": false, "id": "hb2s07", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Dark bay x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb3bay", "steps": [{"done": false, "id": "hb3s01", "text": "Prime grey"}, {"done": false, "id": "hb3s02", "text": "Base body Carthalos Skin 3; points Blackstone Void 1"}, {"done": false, "id": "hb3s03", "text": "Shade Carthalos Skin 1 + Shading Medium"}, {"done": false, "id": "hb3s04", "text": "Layer Carthalos Skin 4"}, {"done": false, "id": "hb3s05", "text": "Highlight Carthalos Skin 5"}, {"done": false, "id": "hb3s06", "text": "Optional glaze Khemri Sands 1 + Shading Medium"}, {"done": false, "id": "hb3s07", "text": "Points: Dataslate Grey 1, then 2 on edges"}, {"done": false, "id": "hb3s08", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Bay x3"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb4chest", "steps": [{"done": false, "id": "hb4s01", "text": "Prime grey"}, {"done": false, "id": "hb4s02", "text": "Base body Carthalos Skin 4; mane/tail Carthalos Skin 3"}, {"done": false, "id": "hb4s03", "text": "Shade Carthalos Skin 2 + Shading Medium"}, {"done": false, "id": "hb4s04", "text": "Glaze Chotec Orange 1 + Shading Medium, 2-3 coats"}, {"done": false, "id": "hb4s05", "text": "Layer Ta'unar Ochre 1"}, {"done": false, "id": "hb4s06", "text": "Highlight Ta'unar Ochre 2"}, {"done": false, "id": "hb4s07", "text": "Mane/tail: Carthalos Skin 5, then Ta'unar Ochre 1 strands"}, {"done": false, "id": "hb4s08", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Chestnut x2"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb5grey", "steps": [{"done": false, "id": "hb5s01", "text": "Prime grey"}, {"done": false, "id": "hb5s02", "text": "Base body Dataslate Grey 4; mane/tail Dataslate Grey 3"}, {"done": false, "id": "hb5s03", "text": "Shade Dataslate Grey 2 + Shading Medium, heavier on head and legs"}, {"done": false, "id": "hb5s04", "text": "Layer Blackstone Void 4; mane Necrolith Bone 4"}, {"done": false, "id": "hb5s05", "text": "Highlight Blackstone Void 5; mane Necrolith Bone 5"}, {"done": false, "id": "hb5s06", "text": "Muzzle Dataslate Grey 1 + Celestine Skin 1 glaze"}, {"done": false, "id": "hb5s07", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Grey x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb6dapl", "steps": [{"done": false, "id": "hb6s01", "text": "Prime grey"}, {"done": false, "id": "hb6s02", "text": "Base body Dataslate Grey 4; mane/tail Dataslate Grey 3"}, {"done": false, "id": "hb6s03", "text": "Shade Dataslate Grey 2 + Shading Medium"}, {"done": false, "id": "hb6s04", "text": "Layer Blackstone Void 4; mane Necrolith Bone 4"}, {"done": false, "id": "hb6s05", "text": "Stipple dapple rings Blackstone Void 5 on rump and flanks"}, {"done": false, "id": "hb6s06", "text": "Light glaze Dataslate Grey 3 + Shading Medium between rings"}, {"done": false, "id": "hb6s07", "text": "Muzzle, hooves, eyes, nostrils"}], "title": "Knight horses: Dappled grey x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb7palo", "steps": [{"done": false, "id": "hb7s01", "text": "Prime white"}, {"done": false, "id": "hb7s02", "text": "Base body Khemri Sands 3; mane/tail Necrolith Bone 2"}, {"done": false, "id": "hb7s03", "text": "Shade Khemri Sands 1 + Shading Medium; mane Gnarlwood 3 + Shading Medium"}, {"done": false, "id": "hb7s04", "text": "Layer Khemri Sands 4; mane Necrolith Bone 4"}, {"done": false, "id": "hb7s05", "text": "Highlight Khemri Sands 5; mane Necrolith Bone 5, Blackstone Void 5 strands"}, {"done": false, "id": "hb7s06", "text": "Hooves, eyes, nostrils"}], "title": "Knight horses: Palomino x1"}, {"done": false, "due": "2026-12-31", "example": false, "id": "hb8pieb", "steps": [{"done": false, "id": "hb8s01", "text": "Prime white"}, {"done": false, "id": "hb8s02", "text": "Paint whole horse as white coat (Dataslate Grey 4 to Blackstone Void 5)"}, {"done": false, "id": "hb8s03", "text": "Sketch patches with thinned Dataslate Grey 2"}, {"done": false, "id": "hb8s04", "text": "Fill patches with black recipe (Blackstone Void 1, Dataslate Grey 1-2)"}, {"done": false, "id": "hb8s05", "text": "Soften patch edges with Blackstone Void 4"}, {"done": false, "id": "hb8s06", "text": "Mane/tail, hooves, eyes, nostrils"}], "title": "Knight horses: Piebald x1"}, {"done": false, "due": "2026-12-29", "example": false, "id": "7cox5l6v", "steps": [{"done": false, "id": "vzao2q2w", "text": "Scheme: Per fess Azure and Or (blue top, gold bottom), gold fleur-de-lis on the blue half"}, {"done": false, "id": "pl2bann1", "text": "Banner carries the Duke's full arms (per pale Azure and Or, fleur counterchanged)"}, {"done": false, "id": "pl3trim1", "text": "Keep gold trim thinner than the Duke's; grey horse so he stands out"}, {"done": false, "id": "uilmw191", "text": "Prime rider grey, horse grey, banner white"}, {"done": false, "id": "pl4metl1", "text": "Metallics first: armour, helmet, sword, banner finial"}, {"done": false, "id": "jfpezlxa", "text": "Horse base: body Dataslate Grey 4, mane/tail Dataslate Grey 3"}, {"done": false, "id": "plh02", "text": "Horse shade: Dataslate Grey 2 + Shading Medium, heavier on head, legs, belly"}, {"done": false, "id": "plh03", "text": "Horse layer: Blackstone Void 4; mane Necrolith Bone 4"}, {"done": false, "id": "plh04", "text": "Horse highlight: Blackstone Void 5; mane Necrolith Bone 5"}, {"done": false, "id": "plh05", "text": "Horse muzzle Dataslate Grey 1 + Celestine Skin 1 glaze; hooves, eyes, nostrils"}, {"done": false, "id": "pl5shld1", "text": "Shield: pencil a horizontal centre line; bottom half Or first (Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5)"}, {"done": false, "id": "pls02", "text": "Shield: top half Azure (Ultramar Blue 2, shade 1, highlight 3-5)"}, {"done": false, "id": "pls03", "text": "Shield fleur on the blue: Blackstone Void 5 undercoat, Megaboss Yellow 3, highlight 4; outline Hawkshroud Yellow 1 if needed"}, {"done": false, "id": "plc01", "text": "Caparison: same split, blue over gold, gold fleur on the blue at the flank"}, {"done": false, "id": "plc02", "text": "Caparison trim: one thin Hawkshroud Yellow 3 line on the hem only"}, {"done": false, "id": "cp31c9v5", "text": "Surcoat: blue over gold halves; plume Blackstone Void 5, shade Dataslate Grey 3"}, {"done": false, "id": "pl6bann1", "text": "Banner field: pencil vertical centre line; right half Or first, then left half Azure"}, {"done": false, "id": "plb02", "text": "Banner fleur: whole fleur Megaboss Yellow 3, then repaint its right half Ultramar Blue 2; outline blue half Ultramar Blue 1"}, {"done": false, "id": "plb03", "text": "Banner folds: glaze recesses Ultramar Blue 1 / Hawkshroud Yellow 1 + Shading Medium"}, {"done": false, "id": "plb04", "text": "Banner highlights: raised folds Ultramar Blue 4 / Megaboss Yellow 5; dark side one tone higher"}, {"done": false, "id": "plb05", "text": "Banner fringe/tassels: Megaboss Yellow 3, shade Carthalos Skin 3 + Shading Medium"}, {"done": false, "id": "plb06", "text": "Banner pole: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4"}, {"done": false, "id": "pll01", "text": "Leather (reins, belts, straps): Gnarlwood 2-3, shade 1, edge 4"}, {"done": false, "id": "pll99", "text": "Edge highlights and tidy-up"}], "title": "Paladin BSB on horse (Duke's colours)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "3ff6tfdt", "steps": [{"done": false, "id": "dm1prim1", "text": "Prime rider grey, horse white (white palfrey)"}, {"done": false, "id": "dmm01", "text": "Metallics first: jewellery, circlet, staff fittings"}, {"done": false, "id": "xmper4zs", "text": "Horse base: body Blackstone Void 4, mane/tail Necrolith Bone 4"}, {"done": false, "id": "dmh02", "text": "Horse shade: Dataslate Grey 3 + Shading Medium, lighter than a grey; heavier on legs and head"}, {"done": false, "id": "dmh03", "text": "Horse highlight: Blackstone Void 5; mane Necrolith Bone 5"}, {"done": false, "id": "dmh04", "text": "Horse muzzle and eyes: Celestine Skin 1 glaze, Dataslate Grey 1 nostrils; pale hooves Necrolith Bone 1 to 3"}, {"done": false, "id": "dm2drss1", "text": "Dress base: Lustria Green 3"}, {"done": false, "id": "dmd02", "text": "Dress shade: Lustria Green 1 + Shading Medium into folds, Lustria Green 2 to soften"}, {"done": false, "id": "dmd03", "text": "Dress layer: Lustria Green 4 on raised folds (Blending Medium for smooth transitions)"}, {"done": false, "id": "dmd04", "text": "Dress highlight: Lustria Green 5 on the very tops of folds"}, {"done": false, "id": "dmd05", "text": "Green cloak/saddle cloth: Kasrkin Green 2, shade 1, highlight 3-4 (darker green to contrast the dress)"}, {"done": false, "id": "dmd06", "text": "Gold trim on hems and sleeves: Megaboss Yellow 3, shade Hawkshroud Yellow 1, edge Megaboss Yellow 5"}, {"done": false, "id": "dm3skin1", "text": "Skin: Celestine Skin 3, shade Carthalos Skin 5 + Shading Medium, highlight Celestine Skin 4 then 5"}, {"done": false, "id": "dms02", "text": "Lips and cheeks: thin glaze Eye of Terror 1 + Shading Medium"}, {"done": false, "id": "dms03", "text": "Eyes: Blackstone Void 5 whites, Blackstone Void 1 dot"}, {"done": false, "id": "dms04", "text": "Hair: Khemri Sands 3, shade Khemri Sands 1 + Shading Medium, highlight 4 then 5"}, {"done": false, "id": "dm4detl1", "text": "Staff: Gnarlwood 3, shade 1, highlight 4"}, {"done": false, "id": "dmx02", "text": "Grail or gem details: Seraphon Blue 3 to 5, white dot glint"}, {"done": false, "id": "dmx03", "text": "Reins and saddle leather: Gnarlwood 2, shade 1, edge 3"}, {"done": false, "id": "dmx99", "text": "Edge highlights and tidy-up"}], "title": "Damsel on horse (green)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "uhek3ago", "steps": [{"done": true, "id": "z3jx6kq5", "text": "Duke colours: per pale Azure and Or, fleur-de-lis counterchanged"}, {"done": false, "id": "ma1prim1", "text": "Prime grey (white zenithal from above helps the yellow)"}, {"done": false, "id": "ma2metl1", "text": "Metallics first: helmets, mail, polearm heads"}, {"done": false, "id": "mat01", "text": "Tabards: pencil a vertical centre line; Or half first (Megaboss Yellow 3)"}, {"done": false, "id": "mat02", "text": "Tabards: Azure half (Ultramar Blue 2)"}, {"done": false, "id": "mat03", "text": "Tabard shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into folds"}, {"done": false, "id": "mat04", "text": "Tabard highlight: Megaboss Yellow 4 / Ultramar Blue 3-4 on raised folds only (keep them scruffier than the knights)"}, {"done": false, "id": "jahxleth", "text": "Hose and sleeves: mix it up across the unit: Dataslate Grey 2-3, Gnarlwood 3, Necrolith Bone 2"}, {"done": false, "id": "mab02", "text": "Undershirts and padding: Necrolith Bone 2, shade Gnarlwood 3 + Shading Medium, highlight Necrolith Bone 4"}, {"done": false, "id": "mab03", "text": "Skin: Celestine Skin 3, shade Carthalos Skin 5 + Shading Medium, highlight Celestine Skin 4"}, {"done": false, "id": "mab04", "text": "Hair and beards: vary between Gnarlwood 2, Carthalos Skin 3 and Khemri Sands 2"}, {"done": false, "id": "mab05", "text": "Leather belts, boots, straps: Gnarlwood 2-3, shade 1, edge 4"}, {"done": false, "id": "mab06", "text": "Polearm hafts: Gnarlwood 3, shade 1, highlight 4"}, {"done": false, "id": "d60w8whw", "text": "Shields: pencil centre line; Or half first, then Azure half"}, {"done": false, "id": "mas02", "text": "Shield fleur: paint it whole Megaboss Yellow 3, then repaint its Or-side half Ultramar Blue 2"}, {"done": false, "id": "mas03", "text": "Shield highlights: rim edges only; blue side one tone higher"}, {"done": false, "id": "ma3bann1", "text": "Unit banner: the Duke's arms, same recipe as the Paladin's banner"}, {"done": false, "id": "mab07", "text": "Musician/champion: add a little extra gold trim so they read at a glance"}, {"done": false, "id": "mab08", "text": "Weathering: Gnarlwood 3 + Shading Medium glaze on tabard hems and boots"}, {"done": false, "id": "mab99", "text": "Edge highlights and tidy-up"}], "title": "10 Men at arms (Duke's colours)"}, {"done": false, "due": "2026-12-31", "example": false, "id": "bas1stg1", "steps": [{"done": false, "id": "bs1schm1", "text": "Scheme: muddy Bretonnian field with static grass, same on every base"}, {"done": false, "id": "bsm01", "text": "Glue a pinch of fine sand and a few small stones first for extra texture (optional)"}, {"done": false, "id": "bs2text1", "text": "Apply mud texture paste with an old brush or sculpting tool; push it up around feet and hooves"}, {"done": false, "id": "bsm03", "text": "While wet, press hoof prints and ruts with a toothpick; drag a few ridges"}, {"done": false, "id": "bsm04", "text": "Let the texture dry fully (several hours or overnight) before painting"}, {"done": false, "id": "bs3pnt01", "text": "Basecoat Gnarlwood 2 (skip if your texture paste is already mud-coloured)"}, {"done": false, "id": "bsm06", "text": "Shade Gnarlwood 1 + Shading Medium into ruts and around feet"}, {"done": false, "id": "bsm07", "text": "Drybrush Gnarlwood 3, then a lighter pass of Gnarlwood 4 (Tone Pro drybrush)"}, {"done": false, "id": "bsm08", "text": "Very light drybrush Necrolith Bone 2 on the highest ridges only"}, {"done": false, "id": "bsm09", "text": "Rocks: Dataslate Grey 2, drybrush Dataslate Grey 4"}, {"done": false, "id": "bsm10", "text": "Mud splash on horse legs, hems and boots: stipple Gnarlwood 2, then Gnarlwood 3 on the edges"}, {"done": false, "id": "bsm11", "text": "Wet mud: gloss varnish in the deepest ruts and hoof prints"}, {"done": false, "id": "bs4tuft1", "text": "Static grass: dab PVA in patches, leaving the muddy ruts bare"}, {"done": false, "id": "bsm13", "text": "Apply 2-4mm static grass with a puffer or applicator; leave to dry, then tap and blow off excess"}, {"done": false, "id": "bsm14", "text": "A few tufts or flowers sparingly, mostly at base edges"}, {"done": false, "id": "bs5rim01", "text": "Base rims: Gnarlwood 1 (or Blackstone Void 1), two thin coats"}, {"done": false, "id": "bsm16", "text": "Matt varnish the model, avoiding the gloss mud"}], "title": "Basing (mud and static grass)"}]};
+function migrateBretonnia(){
+  const FLAG="workbench-mig-bretonnia-2026-10-29";
+  try{if(localStorage.getItem(FLAG))return;}catch(e){return;}
+  const old=projects.bretonnia, upd=clone(BRET_UPDATE);
+  if(old){
+    const oStages={};(old.stages||[]).forEach(s=>oStages[s.id]=s);
+    upd.stages.forEach(s=>{const o=oStages[s.id]; if(!o)return;
+      if(o.done) s.done=true; if(o.due) s.due=o.due;
+      const os={};(o.steps||[]).forEach(x=>os[x.id]=x);
+      s.steps.forEach(x=>{if(os[x.id]&&os[x.id].done) x.done=true;});
+      const ids=new Set(s.steps.map(x=>x.id));
+      (o.steps||[]).forEach(x=>{if(!ids.has(x.id)&&!KNOWN_OLD.has(x.id)) s.steps.push(x);});
+    });
+    const sids=new Set(upd.stages.map(s=>s.id));
+    (old.stages||[]).forEach(s=>{if(!sids.has(s.id)) upd.stages.push(s);});
+    if(old.color) upd.color=old.color; if(old.order!=null) upd.order=old.order; if(old.about) upd.about=old.about;
+  }
+  upd.id="bretonnia"; projects.bretonnia=upd; persist();
+  try{localStorage.setItem(FLAG,"1");}catch(e){}
+}
+const BASING_UPDATE={"done": false, "due": "2026-12-31", "example": false, "id": "bas1stg1", "steps": [{"done": false, "id": "bs1schm1", "text": "Scheme: muddy Bretonnian field with static grass, same on every base"}, {"done": false, "id": "bsm01", "text": "Glue a pinch of fine sand and a few small stones first for extra texture (optional)"}, {"done": false, "id": "bs2text1", "text": "Apply mud texture paste with an old brush or sculpting tool; push it up around feet and hooves"}, {"done": false, "id": "bsm03", "text": "While wet, press hoof prints and ruts with a toothpick; drag a few ridges"}, {"done": false, "id": "bsm04", "text": "Let the texture dry fully (several hours or overnight) before painting"}, {"done": false, "id": "bs3pnt01", "text": "Basecoat Gnarlwood 2 (skip if your texture paste is already mud-coloured)"}, {"done": false, "id": "bsm06", "text": "Shade Gnarlwood 1 + Shading Medium into ruts and around feet"}, {"done": false, "id": "bsm07", "text": "Drybrush Gnarlwood 3, then a lighter pass of Gnarlwood 4 (Tone Pro drybrush)"}, {"done": false, "id": "bsm08", "text": "Very light drybrush Necrolith Bone 2 on the highest ridges only"}, {"done": false, "id": "bsm09", "text": "Rocks: Dataslate Grey 2, drybrush Dataslate Grey 4"}, {"done": false, "id": "bsm10", "text": "Mud splash on horse legs, hems and boots: stipple Gnarlwood 2, then Gnarlwood 3 on the edges"}, {"done": false, "id": "bsm11", "text": "Wet mud: gloss varnish in the deepest ruts and hoof prints"}, {"done": false, "id": "bs4tuft1", "text": "Static grass: dab PVA in patches, leaving the muddy ruts bare"}, {"done": false, "id": "bsm13", "text": "Apply 2-4mm static grass with a puffer or applicator; leave to dry, then tap and blow off excess"}, {"done": false, "id": "bsm14", "text": "A few tufts or flowers sparingly, mostly at base edges"}, {"done": false, "id": "bs5rim01", "text": "Base rims: Gnarlwood 1 (or Blackstone Void 1), two thin coats"}, {"done": false, "id": "bsm16", "text": "Matt varnish the model, avoiding the gloss mud"}], "title": "Basing (mud and static grass)"};
+function migrateBasing(){
+  const FLAG="workbench-mig-basing-2026-10-29";
+  try{if(localStorage.getItem(FLAG))return;}catch(e){return;}
+  const p=projects.bretonnia;
+  if(p){
+    const upd=clone(BASING_UPDATE), i=(p.stages||[]).findIndex(s=>s.id===upd.id);
+    if(i<0){p.stages.push(upd);}
+    else{
+      const o=p.stages[i], os={};(o.steps||[]).forEach(x=>os[x.id]=x);
+      upd.steps.forEach(x=>{if(os[x.id]&&os[x.id].done)x.done=true;});
+      const ids=new Set(upd.steps.map(x=>x.id));
+      (o.steps||[]).forEach(x=>{if(!ids.has(x.id))upd.steps.push(x);});
+      if(o.due)upd.due=o.due; if(o.done)upd.done=true;
+      p.stages[i]=upd;
+    }
+    persist();
+  }
+  try{localStorage.setItem(FLAG,"1");}catch(e){}
+}
+// 2026-11-06: drop knights 6, 7 and 14; copy the shared rider steps (prime, metallics, body, leather) into every knight.
+function migrateKnights(){
+  const FLAG="workbench-mig-knights-2026-11-06";
+  try{if(localStorage.getItem(FLAG))return;}catch(e){return;}
+  const p=projects.bretonnia;
+  if(p&&p.stages){
+    const WHITE=new Set([1,3,5,7,8,9,12,13,14,15,16,20,21,22]);
+    const gen=p.stages.find(s=>s.id==="br1");
+    const gs={}; ((gen&&gen.steps)||[]).forEach(t=>gs[t.id]=t);
+    const was=id=>!!(gs[id]&&gs[id].done);
+    p.stages=p.stages.filter(s=>!["kh06","kh07","kh14"].includes(s.id));
+    p.stages.forEach(s=>{
+      const m=/^kh(\d\d)$/.exec(s.id); if(!m) return;
+      const n=+m[1], steps=s.steps||[];
+      if(steps.some(t=>t.id===s.id+"-prime")) return;
+      const before=[
+        {id:s.id+"-prime",text:"Prime rider "+(WHITE.has(n)?"white":"grey"),done:was("pvvi9xpo")},
+        {id:s.id+"-metal",text:"Metallics first: armour, helmet, sword and lance tip",done:was("kp4metl1")},
+        {id:s.id+"-body",text:"Paint body",done:was("py1b88pr")}];
+      const leather={id:s.id+"-leather",text:"Leather last: Gnarlwood 3, shade 1, edge 4",done:was("rdlethr1")};
+      const ei=steps.findIndex(t=>/^edge highlights/i.test(t.text||""));
+      if(ei<0) steps.push(leather); else steps.splice(ei,0,leather);
+      s.steps=before.concat(steps);
+      if(s.done&&s.steps.some(t=>!t.done)) s.done=false;
+    });
+    if(gen){
+      const known=new Set(["h6y9j1gj","pvvi9xpo","kp4metl1","rdhrld01","py1b88pr","rdlethr1","sl5hsbhy","4utvn4qv","kwiww433"]);
+      const extra=(gen.steps||[]).filter(t=>!known.has(t.id));
+      if(extra.length) gen.steps=extra; else p.stages=p.stages.filter(s=>s.id!=="br1");
+    }
+    persist();
+  }
+  try{localStorage.setItem(FLAG,"1");}catch(e){}
+}
+// 2026-11-06: full Paladin-style step list for each knight.
+const KNIGHT_DETAIL={"kh01": ["Scheme: the Duke's arms: shield split down the middle, blue left and yellow right, with a fleur-de-lis in the opposite colours", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: pencil a vertical centre line", "Shield right half Or first: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield left half Azure: Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3-5", "Shield fleur: whole fleur Megaboss Yellow 3, then repaint its right half Ultramar Blue 2", "Shield fleur highlight: yellow half Megaboss Yellow 4, blue half Ultramar Blue 3; outline the blue half with Ultramar Blue 1 if it gets lost", "Surcoat: split down the middle, blue left and yellow right", "Surcoat yellow: Megaboss Yellow 3", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Pennant: split down the middle, blue and yellow", "Pennant yellow: Megaboss Yellow 3", "Pennant blue: Ultramar Blue 2", "Pennant shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh02": ["Scheme: red shield with a yellow diagonal band (top-left to bottom-right) and two white fleurs-de-lis", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Gules: Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 4-5", "Shield: tape the diagonal band, top-left to bottom-right", "Shield band Or: Blackstone Void 5 undercoat, then Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield fleurs: two fleurs-de-lis Argent, Blackstone Void 5, shade Dataslate Grey 3 line where the petals meet", "Surcoat: red with a yellow diagonal sash", "Surcoat yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Surcoat red: Bloodtoof Red 3", "Surcoat shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Pennant: red with a yellow diagonal stripe", "Pennant yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Pennant red: Bloodtoof Red 3", "Pennant shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh03": ["Scheme: shield quartered black and white, with a yellow lion rampant on the top-left quarter", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: pencil a cross to make the quarters", "Shield white quarters (top-right, bottom-left) Argent: Blackstone Void 5, shade Dataslate Grey 3", "Shield black quarters Sable: Blackstone Void 1, highlight Craventhrone Cloak 3-4", "Shield lion: silhouette top-left, Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Shield lion detail: shade Hawkshroud Yellow 1 in the recesses, highlight Megaboss Yellow 5, outline Hawkshroud Yellow 1", "Surcoat: quartered black and white (no lion); pencil the cross first", "Surcoat white: Blackstone Void 5", "Surcoat black: Blackstone Void 1", "Surcoat shade: Dataslate Grey 3 + Shading Medium into the folds", "Surcoat highlight: Craventhrone Cloak 4 on raised folds only", "Pennant: quartered black and white", "Pennant white: Blackstone Void 5", "Pennant black: Blackstone Void 1", "Pennant shade: Dataslate Grey 3 + Shading Medium into the folds", "Pennant highlight: Craventhrone Cloak 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh04": ["Scheme: green shield with a white chevron and three yellow stars", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Vert: Lustria Green 3, shade Lustria Green 1-2, highlight Lustria Green 4-5", "Shield: tape the chevron, point a third of the way down", "Shield chevron Argent: Blackstone Void 5, shade Dataslate Grey 3", "Shield stars: a white dot for each, then five Megaboss Yellow 3 strokes", "Shield star highlight: Megaboss Yellow 5 dot in the centre of each star", "Surcoat: green with a white chevron", "Surcoat white: Blackstone Void 5", "Surcoat green: Lustria Green 3", "Surcoat shade: Dataslate Grey 3 / Lustria Green 1 + Shading Medium into the folds", "Surcoat highlight: Lustria Green 5 on raised folds only", "Pennant: green with a yellow star", "Pennant yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Pennant green: Lustria Green 3", "Pennant shade: Hawkshroud Yellow 1 / Lustria Green 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Lustria Green 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh05": ["Scheme: white and blue horizontal stripes, with a red band across the top carrying three yellow fleurs-de-lis", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: whole shield Blackstone Void 5", "Shield chief: top third Gules, Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 4-5", "Shield bars: tape three blue bars below the chief (white directly under it), Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3-4", "Shield white bars: shade Dataslate Grey 3 next to the blue", "Shield fleurs: three small fleurs-de-lis on the chief, Blackstone Void 5 undercoat, then Megaboss Yellow 3, highlight Megaboss Yellow 5", "Surcoat: blue and white stripes (or halves)", "Surcoat white: Blackstone Void 5", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Dataslate Grey 3 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Ultramar Blue 4 on raised folds only", "Pennant: red with one yellow fleur", "Pennant yellow: Megaboss Yellow 3", "Pennant red: Bloodtoof Red 3", "Pennant shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh08": ["Scheme: shield split at a chevron, black above and yellow below, with three roundels in the opposite colours", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: pencil the chevron line, point at the centre", "Shield lower part Or first: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield top part Sable: Blackstone Void 1, highlight Craventhrone Cloak 3-4", "Shield roundels on the black: two yellow, Blackstone Void 5 undercoat, then Megaboss Yellow 3, highlight Megaboss Yellow 5", "Shield roundel on the yellow: one black, Blackstone Void 1, highlight Craventhrone Cloak 3", "Surcoat: black over yellow at a chevron line", "Surcoat yellow: Megaboss Yellow 3", "Surcoat black: Blackstone Void 1", "Surcoat shade: Hawkshroud Yellow 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Craventhrone Cloak 4 on raised folds only", "Pennant: black over yellow at a chevron line", "Pennant yellow: Megaboss Yellow 3", "Pennant black: Blackstone Void 1", "Pennant shade: Hawkshroud Yellow 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Craventhrone Cloak 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh09": ["Scheme: yellow and blue checks, with a red square in the top-left corner", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Or: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield: pencil a 5x6 grid", "Shield checks: alternate squares Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3", "Shield canton: top-left four squares Gules, Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 4-5", "Shield edges: edge highlight the rim and canton only (checks get busy)", "Surcoat: blue and yellow quarters with a checked hem", "Surcoat yellow: Megaboss Yellow 3", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Pennant: blue and yellow halves", "Pennant yellow: Megaboss Yellow 3", "Pennant blue: Ultramar Blue 2", "Pennant shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh10": ["Scheme: blue shield with a yellow Y shape", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Azure: Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3-5", "Shield: pencil a Y from the top corners down to the point", "Shield pall: Blackstone Void 5 undercoat, then Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Surcoat: blue with a yellow Y", "Surcoat yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Pennant: blue with a yellow stripe", "Pennant yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Pennant blue: Ultramar Blue 2", "Pennant shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh11": ["Scheme: black shield with a yellow wedge pointing down, and a black star on the wedge", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield pile first: yellow wedge from the top edge to near the point, Blackstone Void 5 undercoat, then Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield field Sable: rest of the shield Blackstone Void 1, highlight Craventhrone Cloak 3-4", "Shield star: black star near the top of the wedge, Blackstone Void 1, highlight Craventhrone Cloak 3", "Surcoat: black with a yellow wedge", "Surcoat yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Surcoat black: Blackstone Void 1", "Surcoat shade: Hawkshroud Yellow 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Craventhrone Cloak 4 on raised folds only", "Pennant: yellow point on black", "Pennant yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Pennant black: Blackstone Void 1", "Pennant shade: Hawkshroud Yellow 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Craventhrone Cloak 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh12": ["Scheme: shield divided into eight wedges, alternating white and green", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: whole shield Blackstone Void 5", "Shield: pencil four lines through a point just above centre (vertical, horizontal, both diagonals)", "Shield green wedges: fill alternate wedges Vert, Lustria Green 3, shade Lustria Green 1-2, highlight Lustria Green 4-5", "Shield white wedges: shade Dataslate Grey 3 next to the green", "Surcoat: white and green quarters", "Surcoat white: Blackstone Void 5", "Surcoat green: Lustria Green 3", "Surcoat shade: Dataslate Grey 3 / Lustria Green 1 + Shading Medium into the folds", "Surcoat highlight: Lustria Green 5 on raised folds only", "Pennant: white and green halves", "Pennant white: Blackstone Void 5", "Pennant green: Lustria Green 3", "Pennant shade: Dataslate Grey 3 / Lustria Green 1 + Shading Medium into the folds", "Pennant highlight: Lustria Green 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh13": ["Scheme: yellow shield with a blue band across the middle and three red roundels", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Or: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield: tape a horizontal band a quarter of the height", "Shield fess Azure: Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3-5", "Shield roundels: three red, two above the band and one below, Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 5", "Surcoat: yellow with a blue chest band", "Surcoat yellow: Megaboss Yellow 3", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Pennant: yellow with a blue stripe", "Pennant yellow: Megaboss Yellow 3", "Pennant blue: Ultramar Blue 2", "Pennant shade: Hawkshroud Yellow 1 / Ultramar Blue 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Ultramar Blue 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh15": ["Scheme: shield split corner to corner into four triangles, blue top and bottom, white left and right", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: pencil an X corner to corner", "Shield left and right triangles Argent first: Blackstone Void 5, shade Dataslate Grey 3", "Shield top and bottom triangles Azure: Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3-5", "Surcoat: blue with white side panels", "Surcoat white: Blackstone Void 5", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Dataslate Grey 3 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Ultramar Blue 4 on raised folds only", "Pennant: blue and white halves", "Pennant white: Blackstone Void 5", "Pennant blue: Ultramar Blue 2", "Pennant shade: Dataslate Grey 3 / Ultramar Blue 1 + Shading Medium into the folds", "Pennant highlight: Ultramar Blue 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh16": ["Scheme: six vertical stripes, yellow and red", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Or: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield: tape six equal vertical stripes", "Shield stripes: 2nd, 4th and 6th Gules, Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 4-5", "Surcoat: vertical red and yellow stripes", "Surcoat yellow: Megaboss Yellow 3", "Surcoat red: Bloodtoof Red 3", "Surcoat shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Pennant: vertical red and yellow stripes", "Pennant yellow: Megaboss Yellow 3", "Pennant red: Bloodtoof Red 3", "Pennant shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh17": ["Scheme: blue shield with a white diagonal band (top-right to bottom-left) and two yellow stars", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Azure: Ultramar Blue 2, shade Ultramar Blue 1, highlight Ultramar Blue 3-5", "Shield: tape the diagonal band, top-right to bottom-left", "Shield band Argent: Blackstone Void 5, shade Dataslate Grey 3", "Shield stars: top-left and bottom-right, white dots first, then Megaboss Yellow 3, highlight Megaboss Yellow 5", "Surcoat: blue with a white sash", "Surcoat white: Blackstone Void 5", "Surcoat blue: Ultramar Blue 2", "Surcoat shade: Dataslate Grey 3 / Ultramar Blue 1 + Shading Medium into the folds", "Surcoat highlight: Ultramar Blue 4 on raised folds only", "Pennant: blue with a white stripe", "Pennant white: Blackstone Void 5", "Pennant blue: Ultramar Blue 2", "Pennant shade: Dataslate Grey 3 / Ultramar Blue 1 + Shading Medium into the folds", "Pennant highlight: Ultramar Blue 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh18": ["Scheme: red shield with a yellow band across the top and three white rings", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Gules: Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 4-5", "Shield chief: top third Or, Blackstone Void 5 undercoat, then Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield annulets: three white rings (two side by side, one below), a Blackstone Void 5 dot, then a smaller Bloodtoof Red 3 dot in the centre", "Shield annulet shade: Dataslate Grey 3 on the lower edge of each ring", "Surcoat: red with a yellow yoke across the shoulders", "Surcoat yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Surcoat red: Bloodtoof Red 3", "Surcoat shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Pennant: yellow over red", "Pennant yellow: Blackstone Void 5 undercoat, then Megaboss Yellow 3", "Pennant red: Bloodtoof Red 3", "Pennant shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh19": ["Scheme: green shield with a wavy white band across the middle", "Prime rider grey, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Vert: Lustria Green 3, shade Lustria Green 1-2, highlight Lustria Green 4-5", "Shield: pencil two parallel wavy lines across the middle", "Shield fess wavy Argent: Blackstone Void 5, shade Dataslate Grey 3", "Shield band, optional: fine Ultramar Blue 4 lines inside it (Lady of the Lake nod)", "Surcoat: green with a wavy white band", "Surcoat white: Blackstone Void 5", "Surcoat green: Lustria Green 3", "Surcoat shade: Dataslate Grey 3 / Lustria Green 1 + Shading Medium into the folds", "Surcoat highlight: Lustria Green 5 on raised folds only", "Pennant: green with a white wave", "Pennant white: Blackstone Void 5", "Pennant green: Lustria Green 3", "Pennant shade: Dataslate Grey 3 / Lustria Green 1 + Shading Medium into the folds", "Pennant highlight: Lustria Green 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh20": ["Scheme: six diagonal stripes, white and purple", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: whole shield Blackstone Void 5", "Shield: tape six diagonal stripes, top-left to bottom-right", "Shield purple stripes: alternate stripes purple tone 2, shade tone 1, highlight tone 3-4", "Shield white stripes: shade Dataslate Grey 3 next to the purple", "Surcoat: purple with one white sash, or full stripes", "Surcoat white: Blackstone Void 5", "Surcoat purple: purple tone 2", "Surcoat shade: Dataslate Grey 3 / purple tone 1 + Shading Medium into the folds", "Surcoat highlight: purple tone 4 on raised folds only", "Pennant: purple and white stripes", "Pennant white: Blackstone Void 5", "Pennant purple: purple tone 2", "Pennant shade: Dataslate Grey 3 / purple tone 1 + Shading Medium into the folds", "Pennant highlight: purple tone 4 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh21": ["Scheme: shield quartered red and yellow, with a black border", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield: pencil a cross to make the quarters", "Shield top-right and bottom-left Or first: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield other two quarters Gules: Bloodtoof Red 3, shade Bloodtoof Red 1, highlight Bloodtoof Red 4-5", "Shield bordure: 1.5-2mm black border last, Blackstone Void 1, highlight Craventhrone Cloak 3", "Surcoat: red and yellow quarters with a black hem", "Surcoat yellow: Megaboss Yellow 3", "Surcoat red: Bloodtoof Red 3", "Surcoat black: Blackstone Void 1", "Surcoat shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Bloodtoof Red 5 / Craventhrone Cloak 4 on raised folds only", "Pennant: red and yellow halves", "Pennant yellow: Megaboss Yellow 3", "Pennant red: Bloodtoof Red 3", "Pennant shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"], "kh22": ["Scheme: yellow shield with three thin red chevrons", "Prime rider white, pennant white", "Metallics first: armour, helmet, sword and lance tip", "Shield field Or: Megaboss Yellow 3, shade Hawkshroud Yellow 1, highlight Megaboss Yellow 4-5", "Shield: mark three thin, evenly spaced chevrons, points stacked down the centre (1-2mm tape)", "Shield chevronels Gules: Bloodtoof Red 3, shade Bloodtoof Red 1, edge highlight Bloodtoof Red 4", "Surcoat: yellow with three red chevrons", "Surcoat yellow: Megaboss Yellow 3", "Surcoat red: Bloodtoof Red 3", "Surcoat shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Surcoat highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Pennant: yellow with one red chevron", "Pennant yellow: Megaboss Yellow 3", "Pennant red: Bloodtoof Red 3", "Pennant shade: Hawkshroud Yellow 1 / Bloodtoof Red 1 + Shading Medium into the folds", "Pennant highlight: Megaboss Yellow 5 / Bloodtoof Red 5 on raised folds only", "Helmet plume: Blackstone Void 5, shade Dataslate Grey 3 (or a colour from the arms, for variety)", "Lance shaft: Gnarlwood 2, shade Gnarlwood 1, highlight Gnarlwood 4", "Leather (reins, belts, straps, scabbard): Gnarlwood 2-3, shade Gnarlwood 1, edge Gnarlwood 4", "Shield rim and any trim: metallic, then edge highlight", "Edge highlights and tidy-up"]};
+function migrateKnightDetail(){
+  const FLAG="workbench-mig-knight-detail-2026-11-06";
+  try{if(localStorage.getItem(FLAG))return;}catch(e){return;}
+  const p=projects.bretonnia;
+  if(p&&p.stages){
+    p.stages.forEach(s=>{
+      const list=KNIGHT_DETAIL[s.id]; if(!list) return;
+      const old=s.steps||[], byId={}; old.forEach(t=>byId[t.id]=t);
+      const done=id=>!!(byId[id]&&byId[id].done);
+      const isGen=t=>/^kh\d\d(-|s\d\d$)/.test(t.id);
+      const shieldOld=old.filter(t=>/^kh\d\ds\d\d$/.test(t.id)&&!/s99$/.test(t.id)&&!/^surcoat/i.test(t.text||""));
+      const surOld=old.find(t=>/^surcoat/i.test(t.text||"")&&isGen(t));
+      const shieldDone=shieldOld.length&&shieldOld.every(t=>t.done);
+      const steps=list.map((text,i)=>{
+        let d=false;
+        if(/^Prime rider/.test(text)) d=done(s.id+"-prime");
+        else if(/^Metallics first/.test(text)) d=done(s.id+"-metal");
+        else if(/^Leather/.test(text)) d=done(s.id+"-leather");
+        else if(/^Edge highlights and tidy-up/.test(text)) d=old.some(t=>/^edge highlights and tidy-up/i.test(t.text||"")&&t.done);
+        else if(/^(Surcoat|Pennant)/.test(text)) d=!!(surOld&&surOld.done);
+        else if(/^Shield/.test(text)) d=!!shieldDone;
+        return {id:s.id+"-d"+String(i+1).padStart(2,"0"),text,done:d};
+      });
+      const extra=old.filter(t=>!isGen(t));
+      if(extra.length) steps.splice(steps.length-1,0,...extra);
+      s.steps=steps;
+      if(s.done&&steps.some(t=>!t.done)) s.done=false;
+    });
+    persist();
+  }
+  try{localStorage.setItem(FLAG,"1");}catch(e){}
+}
+// 2026-11-06: full blazon on every knight (title and Scheme step). The Duke's arms are now per pale Or and Azure:
+// gold on the left as you look, blue on the right. Knight 1, the Paladin's banner and the Men-at-Arms follow.
+const BLAZONS={1:"Per pale Or and Azure, a fleur-de-lis counterchanged",2:"Gules, a bend Or between two fleurs-de-lis Argent",3:"Quarterly Sable and Argent, in the first quarter a lion rampant Or",4:"Vert, a chevron Argent between three mullets Or",5:"Barry of six Argent and Azure, on a chief Gules three fleurs-de-lis Or",6:"Purpure, a saltire Or, a bordure engrailed Argent",7:"Argent, a cross Gules, a bordure Azure",8:"Per chevron Sable and Or, three roundels counterchanged",9:"Chequy Or and Azure, a canton Gules",10:"Azure, a pall Or",11:"Sable, on a pile Or a mullet Sable",12:"Gyronny of eight Argent and Vert",13:"Or, a fess Azure between three torteaux",14:"Lozengy Argent and Gules",15:"Per saltire Azure and Argent",16:"Paly of six Or and Gules",17:"Azure, a bend sinister Argent between two mullets Or",18:"Gules, a chief Or, three annulets Argent",19:"Vert, a fess wavy Argent",20:"Bendy of six Argent and Purpure",21:"Quarterly Gules and Or, a bordure Sable",22:"Or, three chevronels Gules"};
+const DUKE_FLIP=[["blue left and yellow right","yellow left and blue right"],["right half Or","left half Or"],["left half Azure","right half Azure"],["repaint its right half","repaint its left half (on the gold side)"],["split down the middle, blue and yellow","split down the middle, yellow left and blue right"],["per pale Azure and Or","per pale Or and Azure"],["Per pale Azure and Or","Per pale Or and Azure"]];
+function dukeFlip(tx){
+  const re=new RegExp(DUKE_FLIP.map(x=>x[0].replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|"),"g");
+  return String(tx||"").replace(re,m=>DUKE_FLIP.find(x=>x[0]===m)[1]);
+}
+function migrateBlazons(){
+  const FLAG="workbench-mig-blazons-2026-11-06";
+  try{if(localStorage.getItem(FLAG))return;}catch(e){return;}
+  const p=projects.bretonnia;
+  if(p&&p.stages){
+    p.stages.forEach(s=>{
+      const steps=s.steps||[], title=s.title||"";
+      const m=/^kh(\d\d)$/.exec(s.id);
+      if(m){
+        const n=+m[1], bz=BLAZONS[n]; if(!bz) return;
+        if(n===1) steps.forEach(t=>t.text=dukeFlip(t.text));
+        if(/^knight\s*\d+/i.test(title)||!title) s.title="Knight "+n+": "+bz+(n===1?" (Duke's arms)":"");
+        const sch=steps.find(t=>/^scheme:/i.test(t.text||""));
+        if(sch){
+          let plain=sch.text.replace(/^scheme:\s*/i,"").replace(/^the duke's arms:\s*/i,"").trim();
+          if(plain.indexOf(bz)<0){
+            plain=plain.charAt(0).toUpperCase()+plain.slice(1);
+            sch.text="Scheme: "+bz+(n===1?" (the Duke's arms)":"")+". "+plain;
+          }
+        }
+        return;
+      }
+      if(s.id==="7cox5l6v"||/paladin/i.test(title)){
+        steps.forEach(t=>{if(/banner/i.test(t.text||"")) t.text=dukeFlip(t.text);});
+      } else if(s.id==="uhek3ago"||/men[ -]at[ -]arms/i.test(title)){
+        steps.forEach(t=>{
+          t.text=dukeFlip(t.text);
+          if(/^(tabards|shields):/i.test(t.text||"")) t.text=t.text.replace(/\bOr half first\b/,"Or half (left as you look) first");
+        });
+      }
+    });
+    persist();
+  }
+  try{localStorage.setItem(FLAG,"1");}catch(e){}
+}
+function migrateMenAtArms1107(){
+  const FLAG="workbench-mig-maa-2026-11-07";
+  try{if(localStorage.getItem(FLAG))return;}catch(e){return;}
+  const p=projects.bretonnia, s=p&&(p.stages||[]).find(x=>x.id==="uhek3ago");
+  if(s){
+    const steps=s.steps=s.steps||[], by=id=>steps.find(x=>x.id===id);
+    const set=(id,text,done)=>{const t=by(id); if(t){t.text=text; if(done) t.done=true;}};
+    set("ma1prim1","Prime grey: Vallejo grey primer, unthinned, through the TurboX Mini (about 10 min for all ten); white zenithal from above",true);
+    set("ma2metl1","Metallics first: helmets, mail, polearm heads (Vallejo Air Steel: covers well, no sticky texture)");
+    set("mab03","Skin: Celestine Skin 3, shade Carthalos Skin 5 + Shading Medium (very potent: thin it more than you think), highlight Celestine Skin 4");
+    set("mas02","Shield fleur: outline with a fine brush in Black Templar Contrast (pencil didn't work), then fill Megaboss Yellow 3 on the blue side and Ultramar Blue 2 on the gold side");
+    if(!by("mas04wd")){
+      const i=steps.findIndex(x=>x.id==="mas03");
+      const step={id:"mas04wd",text:"Shield backs: wood going up Gnarlwood 1 to 5, black for knots (thin Tone Pro slightly on flat plates)",done:false,images:["ref/shield-backs.jpg"]};
+      if(i<0) steps.push(step); else steps.splice(i+1,0,step);
+    }
+    s.done=steps.length>0&&steps.every(x=>x.done);
+    persist();
+  }
+  try{localStorage.setItem(FLAG,"1");}catch(e){}
+}
+const KNOWN_OLD=new Set(["sl5hsbhy","4utvn4qv","kwiww433","rlthzww1"]);
+async function photosForBackup(){
+  const out={}, refs=new Set();
+  Object.values(projects).forEach(p=>(p.stages||[]).forEach(s=>(s.steps||[]).forEach(t=>(t.images||[]).forEach(r=>{if(String(r).startsWith("idb:")) refs.add(r.slice(4));}))));
+  for(const id of refs){try{const b=await getPhoto(id); if(b) out[id]=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}catch(e){}}
+  return out;
+}
+async function exportBackup(){
+  const photos=await photosForBackup();
+  const data=JSON.stringify({app:"project-workbench",version:1,saved:new Date().toISOString(),projects,photos},null,2);
+  const name="workbench-backup-"+todayISO()+".json";
+  const blob=new Blob([data],{type:"application/json"});
+  const file=typeof File==="function"?new File([blob],name,{type:"application/json"}):null;
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:"Project Workbench backup"}).catch(()=>download(blob,name));
+  } else download(blob,name);
+}
+function download(blob,name){
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+app.addEventListener("change",e=>{
+  if(e.target.id!=="import-file") return;
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result); const ps=d&&d.projects;
+      if(!ps||typeof ps!=="object") throw 0;
+      projects={}; Object.entries(ps).forEach(([id,p])=>{projects[id]=Object.assign(p,{id,stages:p.stages||[]});});
+      persist(); ui.importMsg="Restored "+Object.keys(projects).length+" projects from "+f.name+".";
+      if(d.photos&&typeof d.photos==="object") Object.entries(d.photos).forEach(([id,u])=>{if(typeof u==="string"&&u.startsWith("data:image/")) fetch(u).then(r=>r.blob()).then(b=>putPhoto(id,b)).then(()=>{delete photoLoading[id];render();}).catch(()=>{});});
+    }catch(err){ui.importMsg="That file isn't a Project Workbench backup. Choose a file saved with “Save backup file”.";}
+    render();
+  };
+  r.readAsText(f);
+});
+load(); render();
+if("serviceWorker" in navigator){
+  const hadController=!!navigator.serviceWorker.controller; let reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(hadController&&!reloaded){reloaded=true;if(timers.all) flush();location.reload();}});
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+})();
+</script>
+</body></html>
+
